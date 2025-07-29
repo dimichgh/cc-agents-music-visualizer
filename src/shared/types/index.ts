@@ -11,6 +11,11 @@ export * from './visual';
 // State management types
 export * from './state';
 
+// Import types for internal use in this file
+import type { AudioProcessingConfig } from './audio';
+import type { VisualizationConfig, PerformanceMetrics } from './visual';
+import type { ThemeType, PanelType } from './state';
+
 // Common utility types
 export interface Disposable {
   dispose(): void;
@@ -25,7 +30,7 @@ export interface Configurable<T> {
   getConfig(): T;
 }
 
-export interface EventEmitter<T = Record<string, any>> {
+export interface EventEmitter<T extends Record<string, (...args: any[]) => any> = Record<string, (...args: any[]) => any>> {
   on<K extends keyof T>(event: K, listener: T[K]): void;
   off<K extends keyof T>(event: K, listener: T[K]): void;
   emit<K extends keyof T>(event: K, ...args: Parameters<T[K]>): boolean;
@@ -78,7 +83,7 @@ export interface AppError extends Error {
   code: string;
   category: 'audio' | 'visual' | 'file' | 'system' | 'network';
   severity: 'low' | 'medium' | 'high' | 'critical';
-  context?: Record<string, any>;
+  context?: Record<string, any> | undefined;
   timestamp: number;
 }
 
@@ -86,7 +91,7 @@ export class MusicVisualizerError extends Error implements AppError {
   public readonly code: string;
   public readonly category: AppError['category'];
   public readonly severity: AppError['severity'];
-  public readonly context?: Record<string, any>;
+  public readonly context: Record<string, any> | undefined;
   public readonly timestamp: number;
 
   constructor(
@@ -94,7 +99,7 @@ export class MusicVisualizerError extends Error implements AppError {
     code: string,
     category: AppError['category'],
     severity: AppError['severity'] = 'medium',
-    context?: Record<string, any>
+    context: Record<string, any> | undefined = undefined
   ) {
     super(message);
     this.name = 'MusicVisualizerError';

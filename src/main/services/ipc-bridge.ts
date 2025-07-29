@@ -4,28 +4,29 @@
 
 import { ipcMain, BrowserWindow } from 'electron';
 import { FileManager } from './file-manager';
-import { ServiceInterface, Logger, IPCMessage, IPCResponse } from '@/shared/types';
+import { ServiceInterface, IPCMessage, IPCResponse } from '@/shared/types';
+import { Logger, AppLogger } from '@/shared/utils/logger';
 
 export class IPCBridge implements ServiceInterface {
   private logger: Logger;
   private fileManager: FileManager;
-  private isInitialized = false;
-  private isDisposed = false;
+  private _isInitialized = false;
+  private _isDisposed = false;
 
   constructor(fileManager: FileManager) {
-    this.logger = new Logger('IPCBridge');
+    this.logger = new AppLogger('IPCBridge');
     this.fileManager = fileManager;
   }
 
   async initialize(): Promise<void> {
-    if (this.isInitialized) {
+    if (this._isInitialized) {
       this.logger.warn('IPCBridge already initialized');
       return;
     }
 
     this.logger.info('Initializing IPCBridge...');
     this.setupIPCHandlers();
-    this.isInitialized = true;
+    this._isInitialized = true;
     this.logger.info('IPCBridge initialized successfully');
   }
 
@@ -34,7 +35,7 @@ export class IPCBridge implements ServiceInterface {
     ipcMain.handle('file:open-dialog', async (event) => {
       try {
         const window = BrowserWindow.fromWebContents(event.sender);
-        const result = await this.fileManager.showOpenDialog(window || undefined);
+        const result = await this.fileManager.showOpenDialog(window ?? undefined);
         return this.createResponse(true, result);
       } catch (error) {
         this.logger.error('Failed to handle file open dialog', error as Error);
@@ -186,7 +187,7 @@ export class IPCBridge implements ServiceInterface {
     });
 
     // Log IPC activity in development
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env['NODE_ENV'] === 'development') {
       ipcMain.on('ipc:log', (event, level: string, message: string, ...args: any[]) => {
         this.logger[level as keyof Logger](message, ...args);
       });
@@ -199,13 +200,24 @@ export class IPCBridge implements ServiceInterface {
    * Create standardized IPC response
    */
   private createResponse<T>(success: boolean, data?: T, error?: string, id?: string): IPCResponse<T> {
-    return {
+    const response: IPCResponse<T> = {
       success,
-      data,
-      error,
-      id,
       timestamp: Date.now(),
     };
+    
+    if (data !== undefined) {
+      response.data = data;
+    }
+    
+    if (error !== undefined) {
+      response.error = error;
+    }
+    
+    if (id !== undefined) {
+      response.id = id;
+    }
+    
+    return response;
   }
 
   /**
@@ -267,20 +279,20 @@ export class IPCBridge implements ServiceInterface {
     this.logger.info('IPC handlers removed');
   }
 
-  public isInitialized(): boolean {
-    return this.isInitialized;
+  isInitialized(): boolean {
+    return this._isInitialized;
   }
 
-  public isDisposed(): boolean {
-    return this.isDisposed;
+  isDisposed(): boolean {
+    return this._isDisposed;
   }
 
   public dispose(): void {
-    if (this.isDisposed) return;
+    if (this._isDisposed) return;
 
     this.logger.info('Disposing IPCBridge...');
     this.removeIPCHandlers();
-    this.isDisposed = true;
+    this._isDisposed = true;
     this.logger.info('IPCBridge disposed');
   }
 }

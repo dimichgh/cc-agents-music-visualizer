@@ -90,8 +90,13 @@ const electronAPI = {
 
     // Send log message to main process (development only)
     log: (level: string, message: string, ...args: any[]) => {
-      if (process.env.NODE_ENV === 'development') {
-        ipcRenderer.send('ipc:log', level, message, ...args);
+      // Check if we're in development mode - use try/catch for safety
+      try {
+        if (process.env['NODE_ENV'] === 'development') {
+          ipcRenderer.send('ipc:log', level, message, ...args);
+        }
+      } catch {
+        // Silently fail if NODE_ENV is not accessible
       }
     },
   },

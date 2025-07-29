@@ -4,26 +4,27 @@
 
 import { BrowserWindow, screen } from 'electron';
 import * as path from 'path';
-import { ServiceInterface, Logger } from '@/shared/types';
+import { ServiceInterface } from '@/shared/types';
+import { Logger, AppLogger } from '@/shared/utils/logger';
 
 export class WindowManager implements ServiceInterface {
   private mainWindow: BrowserWindow | null = null;
   private logger: Logger;
-  private isInitialized = false;
-  private isDisposed = false;
+  private _isInitialized = false;
+  private _isDisposed = false;
 
   constructor() {
-    this.logger = new Logger('WindowManager');
+    this.logger = new AppLogger('WindowManager');
   }
 
   async initialize(): Promise<void> {
-    if (this.isInitialized) {
+    if (this._isInitialized) {
       this.logger.warn('WindowManager already initialized');
       return;
     }
 
     this.logger.info('Initializing WindowManager...');
-    this.isInitialized = true;
+    this._isInitialized = true;
     this.logger.info('WindowManager initialized successfully');
   }
 
@@ -40,29 +41,34 @@ export class WindowManager implements ServiceInterface {
     const windowWidth = Math.max(1200, Math.floor(screenWidth * 0.8));
     const windowHeight = Math.max(800, Math.floor(screenHeight * 0.8));
 
-    this.mainWindow = new BrowserWindow({
+    const windowOptions: Electron.BrowserWindowConstructorOptions = {
       width: windowWidth,
       height: windowHeight,
       minWidth: 1000,
       minHeight: 700,
       center: true,
       show: false, // Don't show until ready
-      icon: this.getAppIcon(),
       title: 'Music Visualizer',
       titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
       frame: true,
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
-        enableRemoteModule: false,
         sandbox: false,
         preload: path.join(__dirname, '../preload/preload.js'),
-        webSecurity: process.env.NODE_ENV === 'production',
+        webSecurity: process.env['NODE_ENV'] === 'production',
         allowRunningInsecureContent: false,
         experimentalFeatures: false,
       },
       backgroundColor: '#0a0a0a', // Dark cosmic background
-    });
+    };
+
+    const icon = this.getAppIcon();
+    if (icon) {
+      windowOptions.icon = icon;
+    }
+
+    this.mainWindow = new BrowserWindow(windowOptions);
 
     // Set up window event handlers
     this.setupWindowEventHandlers();
@@ -79,7 +85,7 @@ export class WindowManager implements ServiceInterface {
         this.mainWindow.focus();
 
         // Enable DevTools in development
-        if (process.env.NODE_ENV === 'development') {
+        if (process.env['NODE_ENV'] === 'development') {
           this.mainWindow.webContents.openDevTools();
         }
       }
@@ -161,7 +167,7 @@ export class WindowManager implements ServiceInterface {
       throw new Error('Main window not created');
     }
 
-    const isDevelopment = process.env.NODE_ENV === 'development';
+    const isDevelopment = process.env['NODE_ENV'] === 'development';
     
     if (isDevelopment) {
       // Development: load from webpack dev server
@@ -222,16 +228,16 @@ export class WindowManager implements ServiceInterface {
     }
   }
 
-  public isInitialized(): boolean {
-    return this.isInitialized;
+  isInitialized(): boolean {
+    return this._isInitialized;
   }
 
-  public isDisposed(): boolean {
-    return this.isDisposed;
+  isDisposed(): boolean {
+    return this._isDisposed;
   }
 
   public dispose(): void {
-    if (this.isDisposed) return;
+    if (this._isDisposed) return;
 
     this.logger.info('Disposing WindowManager...');
 
@@ -240,7 +246,7 @@ export class WindowManager implements ServiceInterface {
       this.mainWindow = null;
     }
 
-    this.isDisposed = true;
+    this._isDisposed = true;
     this.logger.info('WindowManager disposed');
   }
 }

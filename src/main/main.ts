@@ -7,7 +7,7 @@ import * as path from 'path';
 import { WindowManager } from './services/window-manager';
 import { FileManager } from './services/file-manager';
 import { IPCBridge } from './services/ipc-bridge';
-import { Logger } from '@/shared/utils/logger';
+import { Logger, AppLogger } from '@/shared/utils/logger';
 
 class MusicVisualizerApp {
   private windowManager!: WindowManager;
@@ -16,7 +16,7 @@ class MusicVisualizerApp {
   private logger: Logger;
 
   constructor() {
-    this.logger = new Logger('MainProcess');
+    this.logger = new AppLogger('MainProcess');
     this.setupEventHandlers();
   }
 
@@ -29,9 +29,9 @@ class MusicVisualizerApp {
 
     // Security handlers
     app.on('web-contents-created', (_, contents) => {
-      contents.on('new-window', (navigationEvent, url) => {
-        navigationEvent.preventDefault();
+      contents.setWindowOpenHandler(({ url }) => {
         shell.openExternal(url);
+        return { action: 'deny' };
       });
 
       contents.on('will-navigate', (navigationEvent, url) => {
@@ -162,12 +162,15 @@ class MusicVisualizerApp {
       });
 
       // Window menu
-      (template[3].submenu as Electron.MenuItemConstructorOptions[]).push(
-        { type: 'separator' },
-        { role: 'front' },
-        { type: 'separator' },
-        { role: 'window' }
-      );
+      const windowMenu = template[3]?.submenu as Electron.MenuItemConstructorOptions[] | undefined;
+      if (windowMenu) {
+        windowMenu.push(
+          { type: 'separator' },
+          { role: 'front' },
+          { type: 'separator' },
+          { role: 'window' }
+        );
+      }
     }
 
     const menu = Menu.buildFromTemplate(template);

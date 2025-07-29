@@ -5,12 +5,13 @@
 import { dialog, BrowserWindow } from 'electron';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { ServiceInterface, Logger, FileDialogOptions, ValidationResult, AudioFile } from '@/shared/types';
+import { ServiceInterface, FileDialogOptions, ValidationResult, AudioFile } from '@/shared/types';
+import { Logger, AppLogger } from '@/shared/utils/logger';
 
 export class FileManager implements ServiceInterface {
   private logger: Logger;
-  private isInitialized = false;
-  private isDisposed = false;
+  private _isInitialized = false;
+  private _isDisposed = false;
   
   // Supported audio formats
   private readonly supportedFormats = [
@@ -22,17 +23,17 @@ export class FileManager implements ServiceInterface {
   private readonly maxFileSize = 200 * 1024 * 1024; // 200MB
 
   constructor() {
-    this.logger = new Logger('FileManager');
+    this.logger = new AppLogger('FileManager');
   }
 
   async initialize(): Promise<void> {
-    if (this.isInitialized) {
+    if (this._isInitialized) {
       this.logger.warn('FileManager already initialized');
       return;
     }
 
     this.logger.info('Initializing FileManager...');
-    this.isInitialized = true;
+    this._isInitialized = true;
     this.logger.info('FileManager initialized successfully');
   }
 
@@ -48,13 +49,15 @@ export class FileManager implements ServiceInterface {
         properties: ['openFile'],
       };
 
-      const result = await dialog.showOpenDialog(parentWindow || undefined, options);
+      const result = parentWindow 
+        ? await dialog.showOpenDialog(parentWindow, options)
+        : await dialog.showOpenDialog(options);
 
       if (result.canceled || result.filePaths.length === 0) {
         return null;
       }
 
-      const filePath = result.filePaths[0];
+      const filePath = result.filePaths[0]!;
       return await this.createAudioFileInfo(filePath);
     } catch (error) {
       this.logger.error('Failed to show open dialog', error as Error);
@@ -201,7 +204,7 @@ export class FileManager implements ServiceInterface {
   /**
    * Get file stats
    */
-  async getFileStats(filePath: string): Promise<fs.Stats | null> {
+  async getFileStats(filePath: string): Promise<import('fs').Stats | null> {
     try {
       return await fs.stat(filePath);
     } catch (error) {
@@ -219,12 +222,19 @@ export class FileManager implements ServiceInterface {
     parentWindow?: BrowserWindow
   ): Promise<string | null> {
     try {
-      const result = await dialog.showSaveDialog(parentWindow || undefined, {
-        title: 'Save File',
-        defaultPath: defaultName,
-        filters,
-        properties: ['createDirectory'],
-      });
+      const result = parentWindow 
+        ? await dialog.showSaveDialog(parentWindow, {
+            title: 'Save File',
+            defaultPath: defaultName,
+            filters,
+            properties: ['createDirectory'],
+          })
+        : await dialog.showSaveDialog({
+            title: 'Save File',
+            defaultPath: defaultName,
+            filters,
+            properties: ['createDirectory'],
+          });
 
       return result.canceled ? null : result.filePath || null;
     } catch (error) {
@@ -233,19 +243,19 @@ export class FileManager implements ServiceInterface {
     }
   }
 
-  public isInitialized(): boolean {
-    return this.isInitialized;
+  isInitialized(): boolean {
+    return this._isInitialized;
   }
 
-  public isDisposed(): boolean {
-    return this.isDisposed;
+  isDisposed(): boolean {
+    return this._isDisposed;
   }
 
   public dispose(): void {
-    if (this.isDisposed) return;
+    if (this._isDisposed) return;
 
     this.logger.info('Disposing FileManager...');
-    this.isDisposed = true;
+    this._isDisposed = true;
     this.logger.info('FileManager disposed');
   }
 }
