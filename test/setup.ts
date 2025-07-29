@@ -25,8 +25,8 @@ afterEach(() => {
 });
 
 // Configure test environment
-global.expect = expect;
-global.sinon = sinon;
+(global as any).expect = expect;
+(global as any).sinon = sinon;
 
 // Mock browser APIs for Node.js test environment
 global.performance = {
@@ -39,16 +39,16 @@ global.performance = {
   clearMeasures: () => {},
 } as any;
 
-global.requestAnimationFrame = (callback: FrameRequestCallback) => {
-  return setTimeout(() => callback(Date.now()), 16);
+(global as any).requestAnimationFrame = (callback: FrameRequestCallback): number => {
+  return setTimeout(() => callback(Date.now()), 16) as any;
 };
 
-global.cancelAnimationFrame = (id: number) => {
+(global as any).cancelAnimationFrame = (id: number) => {
   clearTimeout(id);
 };
 
 // Mock WebGL context for testing
-global.WebGLRenderingContext = class MockWebGLContext {
+(global as any).WebGLRenderingContext = class MockWebGLContext {
   canvas: any = { width: 800, height: 600, getContext: () => this };
   drawingBufferWidth = 800;
   drawingBufferHeight = 600;
@@ -84,7 +84,7 @@ global.WebGLRenderingContext = class MockWebGLContext {
 } as any;
 
 // Mock AudioContext for testing
-global.AudioContext = class MockAudioContext {
+(global as any).AudioContext = class MockAudioContext {
   state = 'running';
   sampleRate = 44100;
   currentTime = 0;
@@ -164,7 +164,7 @@ global.AudioContext = class MockAudioContext {
   removeEventListener() {}
 } as any;
 
-global.OfflineAudioContext = class MockOfflineAudioContext extends global.AudioContext {
+(global as any).OfflineAudioContext = class MockOfflineAudioContext extends (global as any).AudioContext {
   constructor(public numberOfChannels: number, public length: number, public sampleRate: number) {
     super();
   }
@@ -180,11 +180,11 @@ global.OfflineAudioContext = class MockOfflineAudioContext extends global.AudioC
 } as any;
 
 // Mock File API
-global.File = class MockFile {
+(global as any).File = class MockFile {
   constructor(public name: string, public size: number) {}
 } as any;
 
-global.FileReader = class MockFileReader {
+(global as any).FileReader = class MockFileReader {
   result: any = null;
   onload: any = null;
   onerror: any = null;
