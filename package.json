@@ -1,0 +1,112 @@
+{
+  "name": "music-visualizer",
+  "version": "1.0.0",
+  "description": "Ethereal, psychedelic, cosmic music visualizer with real-time audio analysis",
+  "main": "dist/main/main.js",
+  "homepage": "./",
+  "author": "Music Visualizer Team",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "build": "npm run build:main && npm run build:preload && npm run build:renderer",
+    "build:main": "webpack --config webpack.main.config.js",
+    "build:preload": "webpack --config webpack.preload.config.js",
+    "build:renderer": "webpack --config webpack.renderer.config.js",
+    "dev": "concurrently \"npm run dev:main\" \"npm run dev:preload\" \"npm run dev:renderer\"",
+    "dev:main": "webpack --config webpack.main.config.js --watch",
+    "dev:preload": "webpack --config webpack.preload.config.js --watch",
+    "dev:renderer": "webpack serve --config webpack.renderer.config.js",
+    "start": "electron .",
+    "start:dev": "cross-env NODE_ENV=development electron .",
+    "test": "mocha",
+    "test:watch": "mocha --watch",
+    "test:coverage": "nyc mocha",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "format": "prettier --write \"src/**/*.{ts,js,json}\"",
+    "clean": "rimraf dist",
+    "rebuild": "npm run clean && npm run build",
+    "package": "electron-builder"
+  },
+  "dependencies": {
+    "three": "^0.160.0",
+    "fft.js": "^4.0.3"
+  },
+  "devDependencies": {
+    "electron": "^27.3.0",
+    "typescript": "^5.3.0",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^4.15.1",
+    "ts-loader": "^9.5.1",
+    "html-webpack-plugin": "^5.6.0",
+    "copy-webpack-plugin": "^12.0.2",
+    "css-loader": "^6.8.1",
+    "style-loader": "^3.3.3",
+    "file-loader": "^6.2.0",
+    "url-loader": "^4.1.1",
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "electron-builder": "^24.9.1",
+    "mocha": "^10.2.0",
+    "chai": "^4.3.10",
+    "sinon": "^17.0.1",
+    "nyc": "^15.1.0",
+    "ts-node": "^10.9.2",
+    "@types/mocha": "^10.0.6",
+    "@types/chai": "^4.3.11",
+    "@types/sinon": "^17.0.2",
+    "@types/three": "^0.160.0",
+    "@types/node": "^20.10.6",
+    "@typescript-eslint/eslint-plugin": "^6.16.0",
+    "@typescript-eslint/parser": "^6.16.0",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.1.2",
+    "prettier": "^3.1.1",
+    "rimraf": "^5.0.5"
+  },
+  "build": {
+    "appId": "com.musicvisualizer.app",
+    "productName": "Music Visualizer",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.music"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  },
+  "mocha": {
+    "require": [
+      "ts-node/register",
+      "test/setup.ts"
+    ],
+    "spec": "test/**/*.test.ts",
+    "timeout": 5000,
+    "recursive": true
+  },
+  "nyc": {
+    "extension": [
+      ".ts"
+    ],
+    "exclude": [
+      "**/*.test.ts",
+      "dist/**/*"
+    ],
+    "reporter": [
+      "html",
+      "text"
+    ],
+    "all": true
+  }
+}

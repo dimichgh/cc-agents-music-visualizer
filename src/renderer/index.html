@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="cosmic">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Cosmic Music Visualizer - Ethereal audio exploration with psychedelic visualizations">
+    <title>Cosmic Music Visualizer</title>
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="./styles/cosmic-theme.css" as="style">
+    <link rel="preload" href="./styles/components.css" as="style">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="./styles/cosmic-theme.css">
+    <link rel="stylesheet" href="./styles/components.css">
+    <link rel="stylesheet" href="./styles/layout.css">
+    <link rel="stylesheet" href="./styles/animations.css">
+    <link rel="stylesheet" href="./styles/icons.css">
+    
+    <!-- Web Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Meta tags for better app behavior -->
+    <meta name="color-scheme" content="dark">
+    <meta name="theme-color" content="#0a0a0f">
+    
+    <!-- CSP and Security -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' 'unsafe-eval';
+        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+        font-src 'self' https://fonts.gstatic.com;
+        img-src 'self' data: blob:;
+        media-src 'self' blob:;
+        connect-src 'self';
+        worker-src 'self';
+    ">
+</head>
+<body>
+    <!-- Main Application Container -->
+    <div id="app" role="application" aria-label="Cosmic Music Visualizer">
+        <!-- Loading Screen -->
+        <div id="app-loading" class="app-loading-screen" aria-live="polite">
+            <div class="loading-container">
+                <div class="cosmic-loading-spinner">
+                    <div class="cosmic-ring ring-1"></div>
+                    <div class="cosmic-ring ring-2"></div>
+                    <div class="cosmic-ring ring-3"></div>
+                    <div class="cosmic-core"></div>
+                </div>
+                <h2 class="loading-title">Initializing Cosmic Engine</h2>
+                <p class="loading-message">Preparing ethereal audio exploration...</p>
+            </div>
+        </div>
+        
+        <!-- Error Fallback -->
+        <div id="app-error" class="app-error-screen" style="display: none;" role="alert">
+            <div class="error-container">
+                <div class="cosmic-error-icon">
+                    <span class="cosmic-icon icon-warning"></span>
+                </div>
+                <h2 class="error-title">Cosmic Disturbance Detected</h2>
+                <p class="error-message">Failed to initialize the cosmic visualization engine.</p>
+                <button id="reload-button" class="cosmic-button primary">
+                    <span class="cosmic-icon icon-refresh"></span>
+                    Restart Mission
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+    
+    <!-- Screen Reader Announcements -->
+    <div id="sr-announcements" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+    
+    <!-- Application Scripts -->
+    <script src="./js/renderer.js"></script>
+    
+    <!-- Accessibility Enhancement Script -->
+    <script>
+        // Enhance accessibility features
+        (function() {
+            // Skip link functionality
+            function createSkipLink() {
+                const skipLink = document.createElement('a');
+                skipLink.href = '#main-content';
+                skipLink.className = 'skip-link sr-only-focusable';
+                skipLink.textContent = 'Skip to main content';
+                skipLink.style.cssText = `
+                    position: absolute;
+                    top: -40px;
+                    left: 6px;
+                    background: var(--cosmic-aurora-green);
+                    color: var(--cosmic-void-black);
+                    padding: 8px;
+                    z-index: 100000;
+                    text-decoration: none;
+                    border-radius: 4px;
+                    font-weight: 500;
+                `;
+                
+                skipLink.addEventListener('focus', function() {
+                    this.style.top = '6px';
+                });
+                
+                skipLink.addEventListener('blur', function() {
+                    this.style.top = '-40px';
+                });
+                
+                document.body.insertBefore(skipLink, document.body.firstChild);
+            }
+            
+            // High contrast detection
+            function detectHighContrast() {
+                if (window.matchMedia('(prefers-contrast: high)').matches) {
+                    document.documentElement.setAttribute('data-theme', 'cosmic-high-contrast');
+                }
+            }
+            
+            // Reduced motion detection
+            function detectReducedMotion() {
+                if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                    document.documentElement.classList.add('reduced-motion');
+                }
+            }
+            
+            // Focus management for modals
+            function setupFocusManagement() {
+                let lastFocusedElement = null;
+                
+                document.addEventListener('focusin', function(event) {
+                    const target = event.target;
+                    if (target && !target.closest('[role="dialog"]')) {
+                        lastFocusedElement = target;
+                    }
+                });
+                
+                // Expose for use by components
+                window.cosmicAccessibility = {
+                    restoreFocus: function() {
+                        if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
+                            lastFocusedElement.focus();
+                        }
+                    }
+                };
+            }
+            
+            // Announce messages to screen readers
+            function setupScreenReaderAnnouncements() {
+                window.announceToScreenReader = function(message, priority = 'polite') {
+                    const announcer = document.getElementById('sr-announcements');
+                    if (announcer) {
+                        announcer.setAttribute('aria-live', priority);
+                        announcer.textContent = message;
+                        
+                        // Clear after announcement
+                        setTimeout(() => {
+                            announcer.textContent = '';
+                        }, 1000);
+                    }
+                };
+            }
+            
+            // Initialize when DOM is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', function() {
+                    createSkipLink();
+                    detectHighContrast();
+                    detectReducedMotion();
+                    setupFocusManagement();
+                    setupScreenReaderAnnouncements();
+                });
+            } else {
+                createSkipLink();
+                detectHighContrast();
+                detectReducedMotion();
+                setupFocusManagement();
+                setupScreenReaderAnnouncements();
+            }
+        })();
+    </script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+        // Register service worker for offline functionality (if available)
+        if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(function(registration) {
+                        console.log('Service Worker registered:', registration);
+                    })
+                    .catch(function(error) {
+                        console.log('Service Worker registration failed:', error);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>

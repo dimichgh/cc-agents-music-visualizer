@@ -1,0 +1,392 @@
+/* Music Visualizer - Cosmic Theme Foundation */
+
+:root {
+  /* === COSMIC COLOR PALETTE === */
+  
+  /* Primary Foundation - Deep Space */
+  --cosmic-void-black: #0a0a0f;
+  --cosmic-charcoal: #1a1a25;
+  --cosmic-nebula-dark: #2a2a40;
+  --cosmic-stellar-medium: #3a3a55;
+  
+  /* Accent Colors - Cosmic Phenomena */
+  --cosmic-aurora-green: #64ffda;
+  --cosmic-nebula-blue: #448aff;
+  --cosmic-stellar-purple: #7c4dff;
+  --cosmic-plasma-pink: #ff4081;
+  --cosmic-solar-orange: #ff6d00;
+  --cosmic-quantum-cyan: #00e5ff;
+  
+  /* Semantic Colors - Interface Communication */
+  --cosmic-success: #4caf50;
+  --cosmic-warning: #ff9800;
+  --cosmic-error: #f44336;
+  --cosmic-info: #2196f3;
+  
+  /* Alpha Variants for Transparency */
+  --cosmic-alpha-ethereal: 0.1;
+  --cosmic-alpha-translucent: 0.25;
+  --cosmic-alpha-semi-opaque: 0.5;
+  --cosmic-alpha-visible: 0.75;
+  --cosmic-alpha-solid: 1.0;
+  
+  /* === TYPOGRAPHY SYSTEM === */
+  
+  /* Font Families */
+  --cosmic-font-primary: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --cosmic-font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  --cosmic-font-display: 'Orbitron', 'Exo 2', sans-serif;
+  
+  /* Font Sizes */
+  --cosmic-text-display-large: 48px;
+  --cosmic-text-display-medium: 36px;
+  --cosmic-text-display-small: 32px;
+  --cosmic-text-heading-large: 28px;
+  --cosmic-text-heading-medium: 24px;
+  --cosmic-text-heading-small: 20px;
+  --cosmic-text-body-large: 16px;
+  --cosmic-text-body-medium: 14px;
+  --cosmic-text-body-small: 12px;
+  --cosmic-text-label-large: 14px;
+  --cosmic-text-label-medium: 12px;
+  --cosmic-text-label-small: 11px;
+  
+  /* === SPACING SYSTEM === */
+  
+  /* Base Unit: 4px Grid */
+  --cosmic-space-micro: 4px;
+  --cosmic-space-tiny: 8px;
+  --cosmic-space-small: 12px;
+  --cosmic-space-medium: 16px;
+  --cosmic-space-large: 24px;
+  --cosmic-space-xl: 32px;
+  --cosmic-space-xxl: 48px;
+  --cosmic-space-xxxl: 64px;
+  --cosmic-space-massive: 96px;
+  
+  /* === ELEVATION AND SHADOWS === */
+  
+  /* Shadow Presets */
+  --cosmic-shadow-subtle: 0 2px 8px rgba(100, 255, 218, 0.1);
+  --cosmic-shadow-soft: 0 4px 16px rgba(0, 0, 0, 0.2);
+  --cosmic-shadow-medium: 0 8px 24px rgba(0, 0, 0, 0.3);
+  --cosmic-shadow-strong: 0 16px 32px rgba(0, 0, 0, 0.4);
+  --cosmic-shadow-aura: 0 0 24px rgba(100, 255, 218, 0.3);
+  --cosmic-shadow-energy: 0 0 48px rgba(124, 77, 255, 0.2);
+  
+  /* === BORDER RADIUS === */
+  
+  --cosmic-radius-sharp: 0px;
+  --cosmic-radius-subtle: 2px;
+  --cosmic-radius-soft: 4px;
+  --cosmic-radius-rounded: 8px;
+  --cosmic-radius-curved: 12px;
+  --cosmic-radius-flowing: 16px;
+  --cosmic-radius-organic: 24px;
+  --cosmic-radius-circular: 50%;
+  
+  /* === ANIMATION TIMING === */
+  
+  /* Timing Functions */
+  --cosmic-ease-out: cubic-bezier(0.0, 0.0, 0.2, 1);
+  --cosmic-ease-in: cubic-bezier(0.4, 0.0, 1, 1);
+  --cosmic-ease-in-out: cubic-bezier(0.4, 0.0, 0.2, 1);
+  --cosmic-ease-sharp: cubic-bezier(0.4, 0.0, 0.6, 1);
+  --cosmic-ease-gentle: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --cosmic-ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  
+  /* Duration Scale */
+  --cosmic-duration-instant: 0ms;
+  --cosmic-duration-micro: 100ms;
+  --cosmic-duration-quick: 200ms;
+  --cosmic-duration-standard: 300ms;
+  --cosmic-duration-deliberate: 500ms;
+  --cosmic-duration-slow: 700ms;
+  --cosmic-duration-cinematic: 1000ms;
+  
+  /* === Z-INDEX LAYERS === */
+  
+  --cosmic-z-background: -1;
+  --cosmic-z-normal: 1;
+  --cosmic-z-elevated: 10;
+  --cosmic-z-dropdown: 100;
+  --cosmic-z-sticky: 200;
+  --cosmic-z-fixed: 300;
+  --cosmic-z-modal: 1000;
+  --cosmic-z-popover: 1010;
+  --cosmic-z-tooltip: 1020;
+  --cosmic-z-toast: 10000;
+}
+
+/* === DARK THEME OVERRIDES === */
+:root[data-theme="cosmic-dark"] {
+  --cosmic-void-black: #000000;
+  --cosmic-charcoal: #0d0d0d;
+  --cosmic-nebula-dark: #1a1a1a;
+  --cosmic-stellar-medium: #2a2a2a;
+}
+
+/* === HIGH CONTRAST THEME === */
+:root[data-theme="cosmic-high-contrast"] {
+  --cosmic-void-black: #000000;
+  --cosmic-charcoal: #1a1a1a;
+  --cosmic-aurora-green: #00ffff;
+  --cosmic-plasma-pink: #ff00ff;
+  --cosmic-warning: #ffff00;
+  --cosmic-error: #ff0000;
+}
+
+/* === GLOBAL RESET AND BASE STYLES === */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--cosmic-font-primary);
+  background: linear-gradient(135deg, 
+    var(--cosmic-void-black) 0%, 
+    var(--cosmic-charcoal) 100%);
+  color: rgba(255, 255, 255, 0.9);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  position: relative;
+  min-height: 100vh;
+}
+
+/* Cosmic Background Effects */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(100, 255, 218, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(124, 77, 255, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(255, 64, 129, 0.05) 0%, transparent 50%);
+  z-index: var(--cosmic-z-background);
+  animation: cosmic-drift 20s infinite linear;
+}
+
+/* Animated Stars Overlay */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(1px 1px at 20px 30px, rgba(255, 255, 255, 0.3), transparent),
+    radial-gradient(1px 1px at 40px 70px, rgba(255, 255, 255, 0.2), transparent),
+    radial-gradient(1px 1px at 90px 40px, rgba(255, 255, 255, 0.4), transparent),
+    radial-gradient(1px 1px at 130px 20px, rgba(255, 255, 255, 0.1), transparent),
+    radial-gradient(1px 1px at 160px 90px, rgba(255, 255, 255, 0.3), transparent);
+  background-repeat: repeat;
+  background-size: 200px 100px;
+  z-index: var(--cosmic-z-background);
+  animation: twinkle 3s infinite ease-in-out;
+  pointer-events: none;
+}
+
+/* === COSMIC ANIMATIONS === */
+
+@keyframes cosmic-drift {
+  0% { transform: translate3d(-50px, -30px, 0) rotate(0deg); }
+  100% { transform: translate3d(50px, 30px, 0) rotate(360deg); }
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@keyframes nebula-drift {
+  0% { transform: translate3d(-50px, -30px, 0) rotate(0deg); }
+  100% { transform: translate3d(50px, 30px, 0) rotate(360deg); }
+}
+
+@keyframes cosmic-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes cosmic-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.8; }
+}
+
+@keyframes energy-flow {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes orbital-rotation {
+  0% { transform: rotate(0deg) translateX(150px) rotate(0deg); }
+  100% { transform: rotate(360deg) translateX(150px) rotate(-360deg); }
+}
+
+/* === UTILITY CLASSES === */
+
+/* Visibility */
+.cosmic-hidden { display: none !important; }
+.cosmic-visible { display: block !important; }
+.cosmic-invisible { visibility: hidden !important; }
+
+/* Flexbox utilities */
+.cosmic-flex { display: flex; }
+.cosmic-flex-col { flex-direction: column; }
+.cosmic-flex-row { flex-direction: row; }
+.cosmic-flex-center { align-items: center; justify-content: center; }
+.cosmic-flex-between { justify-content: space-between; }
+.cosmic-flex-around { justify-content: space-around; }
+.cosmic-flex-evenly { justify-content: space-evenly; }
+.cosmic-flex-wrap { flex-wrap: wrap; }
+.cosmic-flex-nowrap { flex-wrap: nowrap; }
+
+/* Grid utilities */
+.cosmic-grid { display: grid; }
+.cosmic-grid-auto { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+
+/* Spacing utilities */
+.cosmic-m-0 { margin: 0; }
+.cosmic-m-1 { margin: var(--cosmic-space-micro); }
+.cosmic-m-2 { margin: var(--cosmic-space-tiny); }
+.cosmic-m-3 { margin: var(--cosmic-space-small); }
+.cosmic-m-4 { margin: var(--cosmic-space-medium); }
+.cosmic-m-5 { margin: var(--cosmic-space-large); }
+
+.cosmic-p-0 { padding: 0; }
+.cosmic-p-1 { padding: var(--cosmic-space-micro); }
+.cosmic-p-2 { padding: var(--cosmic-space-tiny); }
+.cosmic-p-3 { padding: var(--cosmic-space-small); }
+.cosmic-p-4 { padding: var(--cosmic-space-medium); }
+.cosmic-p-5 { padding: var(--cosmic-space-large); }
+
+/* Text utilities */
+.cosmic-text-left { text-align: left; }
+.cosmic-text-center { text-align: center; }
+.cosmic-text-right { text-align: right; }
+.cosmic-text-truncate { 
+  white-space: nowrap; 
+  overflow: hidden; 
+  text-overflow: ellipsis; 
+}
+
+/* Position utilities */
+.cosmic-relative { position: relative; }
+.cosmic-absolute { position: absolute; }
+.cosmic-fixed { position: fixed; }
+.cosmic-sticky { position: sticky; }
+
+/* Size utilities */
+.cosmic-w-full { width: 100%; }
+.cosmic-h-full { height: 100%; }
+.cosmic-w-screen { width: 100vw; }
+.cosmic-h-screen { height: 100vh; }
+
+/* === ACCESSIBILITY SUPPORT === */
+
+/* Screen reader only content */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.sr-only-focusable:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: inherit;
+  margin: inherit;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  body {
+    background: #000000;
+    color: #ffffff;
+  }
+  
+  body::before,
+  body::after {
+    display: none;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  body::before,
+  body::after {
+    animation: none !important;
+  }
+}
+
+/* === SCROLLBAR STYLING === */
+
+/* Webkit scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(42, 42, 64, 0.3);
+  border-radius: var(--cosmic-radius-soft);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 255, 218, 0.3);
+  border-radius: var(--cosmic-radius-soft);
+  transition: background var(--cosmic-duration-quick) ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 255, 218, 0.5);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 255, 218, 0.3) rgba(42, 42, 64, 0.3);
+}
