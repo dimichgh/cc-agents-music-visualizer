@@ -2,7 +2,7 @@
  * Main Renderer Process Entry Point
  */
 
-import { Logger } from '@/shared/utils/logger';
+import { Logger, AppLogger } from '@/shared/utils/logger';
 import { StateManager } from './managers/state-manager';
 import { AudioDecoder } from './services/audio-decoder';
 import { FFTAnalyzer } from './services/fft-analyzer';
@@ -14,20 +14,20 @@ import { ActionTypes } from '@/shared/types';
 
 class MusicVisualizerApp {
   private logger: Logger;
-  private stateManager: StateManager;
-  private audioContext: AudioContext;
-  private audioDecoder: AudioDecoder;
-  private fftAnalyzer: FFTAnalyzer;
-  private renderer: WebGLVisualizationRenderer;
-  private audioManager: AudioManager;
-  private visualizationManager: VisualizationManager;
-  private uiManager: UIManager;
+  private stateManager!: StateManager;
+  private audioContext!: AudioContext;
+  private audioDecoder!: AudioDecoder;
+  private fftAnalyzer!: FFTAnalyzer;
+  private renderer!: WebGLVisualizationRenderer;
+  private audioManager!: AudioManager;
+  private visualizationManager!: VisualizationManager;
+  private uiManager!: UIManager;
 
   private isInitialized = false;
   private canvas: HTMLCanvasElement;
 
   constructor() {
-    this.logger = new Logger('RendererApp');
+    this.logger = new AppLogger('RendererApp');
     this.canvas = document.getElementById('visualization-canvas') as HTMLCanvasElement;
     
     if (!this.canvas) {
@@ -180,10 +180,12 @@ class MusicVisualizerApp {
         const audioFeatures = this.audioManager.updateAnalysis();
 
         // Update visualizations
-        this.visualizationManager.update(deltaTime, audioFeatures);
+        if (audioFeatures) {
+          this.visualizationManager.update(deltaTime, audioFeatures);
 
-        // Render frame
-        this.renderer.render(deltaTime, audioFeatures);
+          // Render frame
+          this.renderer.render(deltaTime, audioFeatures);
+        }
 
         // Update UI
         this.uiManager.update(deltaTime);

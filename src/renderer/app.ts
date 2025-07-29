@@ -3,6 +3,7 @@
 import { AppLayout } from './components/layout/AppLayout';
 import { LoadingOverlay } from './components/ui/LoadingState';
 import { ErrorState } from './components/ui/ErrorState';
+import { LoadingOptions } from './types/ui-types';
 
 class CosmicMusicVisualizer {
   private _appLayout: AppLayout | null = null;
@@ -334,11 +335,14 @@ class CosmicMusicVisualizer {
   // Loading and error management
   private showLoading(message: string, progress?: number): void {
     if (!this._loadingOverlay) {
-      this._loadingOverlay = new LoadingOverlay({
+      const loadingOptions: LoadingOptions = {
         message,
-        progress,
         cancelable: false
-      });
+      };
+      if (progress !== undefined) {
+        loadingOptions.progress = progress;
+      }
+      this._loadingOverlay = new LoadingOverlay(loadingOptions);
       document.body.appendChild(this._loadingOverlay.element);
     } else {
       this._loadingOverlay.setMessage(message);
@@ -514,7 +518,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Handle hot module replacement in development
-if (module.hot) {
+declare const module: { hot?: { accept: (path: string, callback: () => void) => void } };
+if (typeof module !== 'undefined' && module.hot) {
   module.hot.accept('./components/layout/AppLayout', () => {
     console.log('🔄 Hot reloading AppLayout...');
     // Implement HMR logic if needed

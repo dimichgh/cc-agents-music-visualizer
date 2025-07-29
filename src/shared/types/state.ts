@@ -2,8 +2,8 @@
  * Application state management type definitions
  */
 
-import { AudioState } from './audio';
-import { VisualState } from './visual';
+import { AudioState, AudioFile, AudioFeatures } from './audio';
+import { VisualState, PerformanceMetrics } from './visual';
 
 export interface AppState {
   audio: AudioState;

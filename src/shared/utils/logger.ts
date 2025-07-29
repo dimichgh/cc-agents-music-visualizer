@@ -9,7 +9,7 @@ export interface Logger {
   error(message: string, error?: Error, ...args: any[]): void;
 }
 
-export class Logger implements Logger {
+export class AppLogger implements Logger {
   private context: string;
   private colors = {
     debug: '\x1b[36m', // Cyan

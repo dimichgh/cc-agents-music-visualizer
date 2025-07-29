@@ -7,11 +7,11 @@ import { SettingsPanelOptions, SettingsGroup, SettingSetting } from '../../types
 
 export class SettingsPanel extends BaseComponent {
   private _options: SettingsPanelOptions;
-  private _header: HTMLElement;
-  private _searchContainer: HTMLElement;
-  private _groupsContainer: HTMLElement;
-  private _footer: HTMLElement;
-  private _searchInput: CosmicInput;
+  private _header!: HTMLElement;
+  private _searchContainer!: HTMLElement;
+  private _groupsContainer!: HTMLElement;
+  private _footer!: HTMLElement;
+  private _searchInput!: CosmicInput;
   private _settingsMap: Map<string, SettingSetting> = new Map();
   private _groupElements: Map<string, HTMLElement> = new Map();
   private _expandedGroups: Set<string> = new Set();
@@ -589,7 +589,7 @@ export class SettingsPanel extends BaseComponent {
   }
 
   // Public API
-  show(): void {
+  override show(): void {
     super.show();
     this._element.classList.add('visible');
     
@@ -602,7 +602,7 @@ export class SettingsPanel extends BaseComponent {
     this.emit('show');
   }
 
-  hide(): void {
+  override hide(): void {
     this._element.classList.remove('visible');
     setTimeout(() => super.hide(), 300); // Wait for animation
     this.emit('hide');

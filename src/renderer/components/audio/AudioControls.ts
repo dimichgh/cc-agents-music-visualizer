@@ -6,40 +6,40 @@ import { AudioControlsOptions, WaveformData } from '../../types/ui-types';
 
 export class AudioControls extends BaseComponent {
   private _options: AudioControlsOptions;
-  private _transportContainer: HTMLElement;
-  private _waveformContainer: HTMLElement;
-  private _infoContainer: HTMLElement;
-  private _advancedContainer: HTMLElement;
+  private _transportContainer!: HTMLElement;
+  private _waveformContainer!: HTMLElement;
+  private _infoContainer!: HTMLElement;
+  private _advancedContainer!: HTMLElement;
   
   // Transport controls
-  private _playButton: CosmicButton;
-  private _stopButton: CosmicButton;
-  private _previousButton: CosmicButton;
-  private _nextButton: CosmicButton;
+  private _playButton!: CosmicButton;
+  private _stopButton!: CosmicButton;
+  private _previousButton!: CosmicButton;
+  private _nextButton!: CosmicButton;
   
   // Waveform and timeline
-  private _waveformCanvas: HTMLCanvasElement;
-  private _playhead: HTMLElement;
-  private _progressBar: HTMLElement;
-  private _frequencyOverlay: HTMLElement;
+  private _waveformCanvas!: HTMLCanvasElement;
+  private _playhead!: HTMLElement;
+  private _progressBar!: HTMLElement;
+  private _frequencyOverlay!: HTMLElement;
   
   // Volume control
-  private _volumeContainer: HTMLElement;
-  private _volumeSlider: HTMLElement;
-  private _volumeIcon: HTMLElement;
+  private _volumeContainer!: HTMLElement;
+  private _volumeSlider!: HTMLElement;
+  private _volumeIcon!: HTMLElement;
   
   // Info display
-  private _timeDisplay: HTMLElement;
-  private _fileInfo: HTMLElement;
-  private _currentTimeSpan: HTMLElement;
-  private _totalTimeSpan: HTMLElement;
-  private _fileNameSpan: HTMLElement;
+  private _timeDisplay!: HTMLElement;
+  private _fileInfo!: HTMLElement;
+  private _currentTimeSpan!: HTMLElement;
+  private _totalTimeSpan!: HTMLElement;
+  private _fileNameSpan!: HTMLElement;
   
   // Advanced controls
-  private _inputModeSelector: HTMLElement;
-  private _bpmDisplay: HTMLElement;
-  private _keyDisplay: HTMLElement;
-  private _actionButtons: HTMLElement;
+  private _inputModeSelector!: HTMLElement;
+  private _bpmDisplay!: HTMLElement;
+  private _keyDisplay!: HTMLElement;
+  private _actionButtons!: HTMLElement;
   
   // State
   private _duration: number = 0;
@@ -75,7 +75,7 @@ export class AudioControls extends BaseComponent {
     this._loading = this._options.loading || false;
   }
 
-  protected init(): void {
+  protected override init(): void {
     super.init();
     this.setupKeyboardShortcuts();
   }
@@ -101,8 +101,8 @@ export class AudioControls extends BaseComponent {
 
       shortcuts.forEach(shortcut => {
         if (event.key === shortcut.key && 
-            !!event.shiftKey === !!shortcut.shift &&
-            !!event.ctrlKey === !!shortcut.ctrl) {
+            !!event.shiftKey === !!(shortcut as any).shift &&
+            !!event.ctrlKey === !!(shortcut as any).ctrl) {
           event.preventDefault();
           shortcut.handler();
         }
@@ -253,12 +253,14 @@ export class AudioControls extends BaseComponent {
     // Touch events
     this._volumeSlider.addEventListener('touchstart', (event: TouchEvent) => {
       isDragging = true;
-      updateVolume(event.touches[0].clientX);
+      if (event.touches[0]) {
+        updateVolume(event.touches[0].clientX);
+      }
       event.preventDefault();
     });
 
     document.addEventListener('touchmove', (event: TouchEvent) => {
-      if (isDragging) {
+      if (isDragging && event.touches[0]) {
         updateVolume(event.touches[0].clientX);
       }
     });
@@ -368,12 +370,14 @@ export class AudioControls extends BaseComponent {
     // Touch events
     this._waveformCanvas.addEventListener('touchstart', (event: TouchEvent) => {
       isDragging = true;
-      seekToPosition(event.touches[0].clientX);
+      if (event.touches[0]) {
+        seekToPosition(event.touches[0].clientX);
+      }
       event.preventDefault();
     });
 
     document.addEventListener('touchmove', (event: TouchEvent) => {
-      if (isDragging) {
+      if (isDragging && event.touches[0]) {
         seekToPosition(event.touches[0].clientX);
       }
     });
@@ -633,7 +637,7 @@ export class AudioControls extends BaseComponent {
     keyValue.textContent = key;
   }
 
-  setLoading(loading: boolean): void {
+  override setLoading(loading: boolean): void {
     this._loading = loading;
     super.setLoading(loading);
     

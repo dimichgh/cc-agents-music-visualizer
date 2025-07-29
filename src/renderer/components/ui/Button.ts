@@ -1,7 +1,7 @@
 // Music Visualizer - Cosmic Button Component
 
 import { BaseComponent } from '../base/BaseComponent';
-import { ButtonOptions, ButtonVariant, ButtonSize } from '../../types/ui-types';
+import { ButtonOptions, ButtonVariant, ButtonSize, AccessibilityOptions } from '../../types/ui-types';
 
 export class CosmicButton extends BaseComponent {
   private _options: ButtonOptions;
@@ -19,7 +19,7 @@ export class CosmicButton extends BaseComponent {
     this.render();
   }
 
-  protected init(): void {
+  protected override init(): void {
     super.init();
     this.setupButtonEventListeners();
   }
@@ -116,11 +116,17 @@ export class CosmicButton extends BaseComponent {
     }
 
     // Set accessibility attributes
-    this.setAccessibility({
+    const accessibilityOptions: AccessibilityOptions = {
       role: 'button',
-      ariaLabel: this._options.ariaLabel || this._options.text,
       tabIndex: 0
-    });
+    };
+    
+    const ariaLabel = this._options.ariaLabel || this._options.text;
+    if (ariaLabel) {
+      accessibilityOptions.ariaLabel = ariaLabel;
+    }
+    
+    this.setAccessibility(accessibilityOptions);
 
     // Create content
     this.updateContent();
@@ -186,7 +192,7 @@ export class CosmicButton extends BaseComponent {
     this._element.classList.add(variant);
     
     // Update content for icon-only variant
-    if (variant === 'icon-only' || (this._options.variant !== 'icon-only' && variant === 'icon-only')) {
+    if (variant === 'icon-only') {
       this.updateContent();
     }
   }
@@ -201,7 +207,7 @@ export class CosmicButton extends BaseComponent {
     this._element.classList.add(size);
   }
 
-  setLoading(loading: boolean): void {
+  override setLoading(loading: boolean): void {
     super.setLoading(loading);
     
     if (loading) {
@@ -240,12 +246,12 @@ export class CosmicButton extends BaseComponent {
   }
 
   // Override enable/disable to update button state
-  enable(): void {
+  override enable(): void {
     super.enable();
     (this._element as HTMLButtonElement).disabled = false;
   }
 
-  disable(): void {
+  override disable(): void {
     super.disable();
     (this._element as HTMLButtonElement).disabled = true;
   }

@@ -10,22 +10,22 @@ import { LayoutOptions, ResponsiveOptions, BreakpointOptions } from '../../types
 
 export class AppLayout extends BaseComponent {
   private _options: LayoutOptions & ResponsiveOptions;
-  private _header: HTMLElement;
-  private _sidebar: HTMLElement;
-  private _mainContent: HTMLElement;
-  private _footer: HTMLElement;
+  private _header!: HTMLElement;
+  private _sidebar!: HTMLElement;
+  private _mainContent!: HTMLElement;
+  private _footer!: HTMLElement;
   
   // Component instances
-  private _audioControls: AudioControls;
-  private _fileManager: FileManager;
-  private _visualizationCanvas: VisualizationCanvas;
-  private _settingsPanel: SettingsPanel;
+  private _audioControls!: AudioControls;
+  private _fileManager!: FileManager;
+  private _visualizationCanvas!: VisualizationCanvas;
+  private _settingsPanel!: SettingsPanel;
   
   // Layout state
   private _sidebarOpen: boolean = true;
   private _fullscreenMode: boolean = false;
   private _currentBreakpoint: string = 'desktop';
-  private _resizeObserver: ResizeObserver;
+  private _resizeObserver!: ResizeObserver;
 
   constructor(options: LayoutOptions & ResponsiveOptions = {}) {
     super('div');
@@ -488,8 +488,8 @@ export class AppLayout extends BaseComponent {
 
       shortcuts.forEach(shortcut => {
         if (event.key === shortcut.key && 
-            !!event.ctrlKey === !!shortcut.ctrl &&
-            !!event.metaKey === !!shortcut.meta) {
+            !!event.ctrlKey === !!(shortcut as any).ctrl &&
+            !!event.metaKey === !!(shortcut as any).meta) {
           shortcut.handler(event);
         }
       });
@@ -702,7 +702,7 @@ export class AppLayout extends BaseComponent {
   }
 
   // Cleanup
-  destroy(): void {
+  override destroy(): void {
     if (this._resizeObserver) {
       this._resizeObserver.disconnect();
     }

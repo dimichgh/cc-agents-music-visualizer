@@ -6,9 +6,9 @@ import { ErrorOptions } from '../../types/ui-types';
 
 export class ErrorState extends BaseComponent {
   private _options: ErrorOptions;
-  private _iconContainer: HTMLElement;
-  private _contentContainer: HTMLElement;
-  private _actionsContainer: HTMLElement;
+  private _iconContainer!: HTMLElement;
+  private _contentContainer!: HTMLElement;
+  private _actionsContainer!: HTMLElement;
   private _detailsContainer?: HTMLElement;
   private _showingDetails: boolean = false;
 
@@ -29,7 +29,7 @@ export class ErrorState extends BaseComponent {
     container.setAttribute('role', 'alert');
     container.setAttribute('aria-live', 'assertive');
 
-    this.createIcon();
+    this.createErrorIcon();
     this.createContent();
     this.createActions();
     
@@ -40,7 +40,7 @@ export class ErrorState extends BaseComponent {
     return container;
   }
 
-  private createIcon(): void {
+  private createErrorIcon(): void {
     this._iconContainer = document.createElement('div');
     this._iconContainer.className = 'error-icon-container';
     
@@ -420,12 +420,17 @@ export class ErrorState extends BaseComponent {
   }
 
   static genericError(message: string, details?: string): ErrorState {
-    return new ErrorState({
+    const options: ErrorOptions = {
       title: 'Unexpected Error',
       message,
-      details,
       recoverable: true
-    });
+    };
+    
+    if (details !== undefined) {
+      options.details = details;
+    }
+    
+    return new ErrorState(options);
   }
 }
 
@@ -489,7 +494,7 @@ export class ErrorToast extends BaseComponent {
     return toast;
   }
 
-  show(): void {
+  override show(): void {
     super.show();
     this._element.classList.add('toast-visible');
     
@@ -498,7 +503,7 @@ export class ErrorToast extends BaseComponent {
       `Error: ${this._options.title || ''} ${this._options.message}`);
   }
 
-  hide(): void {
+  override hide(): void {
     if (this._autoHideTimer) {
       clearTimeout(this._autoHideTimer);
     }
@@ -512,7 +517,7 @@ export class ErrorToast extends BaseComponent {
     }, 300);
   }
 
-  destroy(): void {
+  override destroy(): void {
     if (this._autoHideTimer) {
       clearTimeout(this._autoHideTimer);
     }

@@ -179,7 +179,7 @@ export function createMockElectronPreload() {
   };
 
   // Mock the global electronAPI
-  global.electronAPI = mockElectronAPI;
+  (global as any).electronAPI = mockElectronAPI;
   
   return mockElectronAPI;
 }
@@ -228,7 +228,7 @@ export function setupElectronTestEnvironment() {
   const electronPreload = createMockElectronPreload();
   
   // Set up global mocks
-  global.electron = {
+  (global as any).electron = {
     ...electronMain,
     ...electronRenderer,
   };
@@ -237,7 +237,7 @@ export function setupElectronTestEnvironment() {
   const originalRequire = require;
   require = ((id: string) => {
     if (id === 'electron') {
-      return global.electron;
+      return (global as any).electron;
     }
     return originalRequire(id);
   }) as any;
@@ -247,7 +247,7 @@ export function setupElectronTestEnvironment() {
     electronRenderer,
     electronPreload,
     cleanup: () => {
-      global.electron = undefined;
+      (global as any).electron = undefined;
       require = originalRequire;
     },
   };

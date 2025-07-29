@@ -4,11 +4,11 @@
 
 import { 
   ServiceInterface, 
-  Logger, 
   AudioFeatures,
   StateManager,
   MusicVisualizerError 
 } from '@/shared/types';
+import { Logger, AppLogger } from '@/shared/utils/logger';
 import { WebGLVisualizationRenderer } from '../engine/webgl-renderer';
 
 export class VisualizationManager implements ServiceInterface {
@@ -16,8 +16,8 @@ export class VisualizationManager implements ServiceInterface {
   private stateManager: StateManager;
   private logger: Logger;
 
-  private isInitialized = false;
-  private isDisposed = false;
+  private _isInitialized = false;
+  private _isDisposed = false;
 
   // Effects and systems
   private effects: any[] = [];
@@ -29,11 +29,11 @@ export class VisualizationManager implements ServiceInterface {
   ) {
     this.renderer = renderer;
     this.stateManager = stateManager;
-    this.logger = new Logger('VisualizationManager');
+    this.logger = new AppLogger('VisualizationManager');
   }
 
   async initialize(): Promise<void> {
-    if (this.isInitialized) {
+    if (this._isInitialized) {
       this.logger.warn('VisualizationManager already initialized');
       return;
     }
@@ -44,7 +44,7 @@ export class VisualizationManager implements ServiceInterface {
       // Initialize basic visualization effects
       await this.initializeEffects();
 
-      this.isInitialized = true;
+      this._isInitialized = true;
       this.logger.info('VisualizationManager initialized successfully');
     } catch (error) {
       throw new MusicVisualizerError(
@@ -135,15 +135,15 @@ export class VisualizationManager implements ServiceInterface {
   }
 
   public isInitialized(): boolean {
-    return this.isInitialized;
+    return this._isInitialized;
   }
 
   public isDisposed(): boolean {
-    return this.isDisposed;
+    return this._isDisposed;
   }
 
   public dispose(): void {
-    if (this.isDisposed) return;
+    if (this._isDisposed) return;
 
     this.logger.info('Disposing VisualizationManager...');
 
@@ -163,7 +163,7 @@ export class VisualizationManager implements ServiceInterface {
     });
     this.particleSystems = [];
 
-    this.isDisposed = true;
+    this._isDisposed = true;
     this.logger.info('VisualizationManager disposed');
   }
 }

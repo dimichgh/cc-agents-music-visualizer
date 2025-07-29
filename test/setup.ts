@@ -5,26 +5,10 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 
-// Global test setup
-before(() => {
-  console.log('Setting up test environment...');
-});
+// Global test setup - console log only, no mocha hooks
+console.log('Setting up test environment...');
 
-after(() => {
-  console.log('Cleaning up test environment...');
-});
-
-beforeEach(() => {
-  // Reset all stubs before each test
-  sinon.restore();
-});
-
-afterEach(() => {
-  // Clean up after each test
-  sinon.restore();
-});
-
-// Configure test environment
+// Configure test environment globals
 (global as any).expect = expect;
 (global as any).sinon = sinon;
 
@@ -199,4 +183,8 @@ global.performance = {
 
 console.log('Test environment setup complete');
 
+// Export for CommonJS compatibility
+module.exports = { expect, sinon };
+
+// Also provide ES module exports for compatibility
 export { expect, sinon };

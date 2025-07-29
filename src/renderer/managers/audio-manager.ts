@@ -4,13 +4,13 @@
 
 import { 
   ServiceInterface, 
-  Logger, 
   AudioFile, 
   AudioFeatures,
   StateManager,
   ActionTypes,
   MusicVisualizerError 
 } from '@/shared/types';
+import { Logger, AppLogger } from '@/shared/utils/logger';
 import { AudioDecoder } from '../services/audio-decoder';
 import { FFTAnalyzer } from '../services/fft-analyzer';
 
@@ -21,8 +21,8 @@ export class AudioManager implements ServiceInterface {
   private stateManager: StateManager;
   private logger: Logger;
 
-  private isInitialized = false;
-  private isDisposed = false;
+  private _isInitialized = false;
+  private _isDisposed = false;
 
   // Audio playback
   private audioBuffer: AudioBuffer | null = null;
@@ -42,11 +42,11 @@ export class AudioManager implements ServiceInterface {
     this.audioDecoder = audioDecoder;
     this.fftAnalyzer = fftAnalyzer;
     this.stateManager = stateManager;
-    this.logger = new Logger('AudioManager');
+    this.logger = new AppLogger('AudioManager');
   }
 
   async initialize(): Promise<void> {
-    if (this.isInitialized) {
+    if (this._isInitialized) {
       this.logger.warn('AudioManager already initialized');
       return;
     }
@@ -61,7 +61,7 @@ export class AudioManager implements ServiceInterface {
       // Connect FFT analyzer
       this.gainNode.connect(this.fftAnalyzer.getAnalyserNode());
 
-      this.isInitialized = true;
+      this._isInitialized = true;
       this.logger.info('AudioManager initialized successfully');
     } catch (error) {
       throw new MusicVisualizerError(
@@ -325,8 +325,9 @@ export class AudioManager implements ServiceInterface {
     let totalEnergy = 0;
 
     for (let i = 0; i < frequencies.length; i++) {
-      weightedSum += i * frequencies[i];
-      totalEnergy += frequencies[i];
+      const freq = frequencies[i] ?? 0;
+      weightedSum += i * freq;
+      totalEnergy += freq;
     }
 
     return totalEnergy > 0 ? weightedSum / totalEnergy / frequencies.length : 0;
@@ -338,7 +339,7 @@ export class AudioManager implements ServiceInterface {
     
     let cumulativeEnergy = 0;
     for (let i = 0; i < frequencies.length; i++) {
-      cumulativeEnergy += frequencies[i];
+      cumulativeEnergy += frequencies[i] ?? 0;
       if (cumulativeEnergy >= rolloffThreshold) {
         return i / frequencies.length;
       }
@@ -353,15 +354,15 @@ export class AudioManager implements ServiceInterface {
   }
 
   public isInitialized(): boolean {
-    return this.isInitialized;
+    return this._isInitialized;
   }
 
   public isDisposed(): boolean {
-    return this.isDisposed;
+    return this._isDisposed;
   }
 
   public dispose(): void {
-    if (this.isDisposed) return;
+    if (this._isDisposed) return;
 
     this.logger.info('Disposing AudioManager...');
 
@@ -376,7 +377,7 @@ export class AudioManager implements ServiceInterface {
 
     this.audioBuffer = null;
 
-    this.isDisposed = true;
+    this._isDisposed = true;
     this.logger.info('AudioManager disposed');
   }
 }

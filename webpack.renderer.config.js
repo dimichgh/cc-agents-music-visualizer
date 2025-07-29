@@ -8,7 +8,8 @@ module.exports = {
   entry: './src/renderer/index.ts',
   output: {
     path: path.resolve(__dirname, 'dist/renderer'),
-    filename: 'renderer.js',
+    filename: '[name].js',
+    chunkFilename: '[name].chunk.js',
     clean: true,
   },
   module: {
@@ -20,6 +21,10 @@ module.exports = {
             loader: 'ts-loader',
             options: {
               configFile: 'tsconfig.json',
+              transpileOnly: true,
+              compilerOptions: {
+                noEmit: false,
+              },
             },
           },
         ],
@@ -91,12 +96,14 @@ module.exports = {
         vendor: {
           test: /[\\/]node_modules[\\/]/,
           name: 'vendors',
+          chunks: 'all',
           priority: 10,
           enforce: true,
         },
         three: {
           test: /[\\/]node_modules[\\/]three[\\/]/,
           name: 'three',
+          chunks: 'all',
           priority: 20,
           enforce: true,
         },

@@ -25,7 +25,7 @@ export class CosmicInput extends BaseComponent {
     this.render();
   }
 
-  protected init(): void {
+  protected override init(): void {
     super.init();
     this.setupInputEventListeners();
   }
@@ -62,7 +62,7 @@ export class CosmicInput extends BaseComponent {
       }
       
       this.emit('blur', event);
-      this.validateInput();
+      this.validateInputValue();
     });
 
     this._inputElement.addEventListener('keydown', (event: KeyboardEvent) => {
@@ -80,7 +80,7 @@ export class CosmicInput extends BaseComponent {
 
     this._inputElement.addEventListener('paste', (event: ClipboardEvent) => {
       // Allow paste, then validate after a short delay
-      setTimeout(() => this.validateInput(), 0);
+      setTimeout(() => this.validateInputValue(), 0);
       this.emit('paste', event);
     });
   }
@@ -121,10 +121,13 @@ export class CosmicInput extends BaseComponent {
     }
 
     // Set accessibility attributes
-    this.setAccessibility({
-      ariaLabel: this._options.ariaLabel,
+    const accessibilityOptions: any = {
       tabIndex: 0
-    });
+    };
+    if (this._options.ariaLabel !== undefined) {
+      accessibilityOptions.ariaLabel = this._options.ariaLabel;
+    }
+    this.setAccessibility(accessibilityOptions);
 
     container.appendChild(this._inputElement);
 
@@ -153,7 +156,7 @@ export class CosmicInput extends BaseComponent {
   set value(newValue: string) {
     this._value = newValue;
     this._inputElement.value = newValue;
-    this.validateInput();
+    this.validateInputValue();
     this.emit('change', newValue);
   }
 
@@ -170,7 +173,7 @@ export class CosmicInput extends BaseComponent {
   }
 
   // Validation
-  private validateInput(): void {
+  private validateInputValue(): void {
     if (!this._options.required && !this._value.trim()) {
       this.clearError();
       return;
@@ -198,7 +201,7 @@ export class CosmicInput extends BaseComponent {
     }
 
     if (errors.length > 0) {
-      this.setError(errors[0]);
+      this.setError(errors[0] || 'Validation error');
     } else {
       this.clearError();
     }
@@ -210,7 +213,7 @@ export class CosmicInput extends BaseComponent {
   }
 
   // Error handling
-  setError(message: string): void {
+  override setError(message: string): void {
     super.setError(message);
     
     if (this._errorElement) {
@@ -222,7 +225,7 @@ export class CosmicInput extends BaseComponent {
     this._inputElement.classList.add('error');
   }
 
-  clearError(): void {
+  override clearError(): void {
     super.clearError();
     
     if (this._errorElement) {
@@ -234,23 +237,23 @@ export class CosmicInput extends BaseComponent {
   }
 
   // State management
-  enable(): void {
+  override enable(): void {
     super.enable();
     this._inputElement.disabled = false;
   }
 
-  disable(): void {
+  override disable(): void {
     super.disable();
     this._inputElement.disabled = true;
   }
 
-  focus(): void {
+  override focus(): void {
     if (this._state.isEnabled && this._state.isVisible) {
       this._inputElement.focus();
     }
   }
 
-  blur(): void {
+  override blur(): void {
     this._inputElement.blur();
   }
 
@@ -262,7 +265,7 @@ export class CosmicInput extends BaseComponent {
   setType(type: InputType): void {
     this._options.type = type;
     this._inputElement.type = type;
-    this.validateInput();
+    this.validateInputValue();
   }
 
   setSize(size: InputSize): void {
@@ -298,7 +301,7 @@ export class CosmicInput extends BaseComponent {
 
   // Autocomplete settings
   setAutocomplete(value: string): void {
-    this._inputElement.autocomplete = value;
+    this._inputElement.autocomplete = value as any;
   }
 
   // Pattern validation
@@ -326,7 +329,7 @@ export class CosmicInput extends BaseComponent {
 
   // Static factory methods for common input types
   static text(placeholder?: string, options: Omit<InputOptions, 'type' | 'placeholder'> = {}): CosmicInput {
-    return new CosmicInput({ ...options, type: 'text', placeholder });
+    return new CosmicInput({ ...options, type: 'text', placeholder: placeholder || '' });
   }
 
   static email(placeholder?: string, options: Omit<InputOptions, 'type' | 'placeholder'> = {}): CosmicInput {

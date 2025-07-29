@@ -6,10 +6,10 @@ import { FileItem, FileBrowserOptions } from '../../types/ui-types';
 
 export class FileManager extends BaseComponent {
   private _options: FileBrowserOptions;
-  private _dropZone: HTMLElement;
-  private _fileList: HTMLElement;
-  private _toolbar: HTMLElement;
-  private _searchInput: HTMLElement;
+  private _dropZone!: HTMLElement;
+  private _fileList!: HTMLElement;
+  private _toolbar!: HTMLElement;
+  private _searchInput!: HTMLElement;
   private _currentPath: string;
   private _files: FileItem[] = [];
   private _selectedFiles: Set<string> = new Set();
@@ -29,7 +29,7 @@ export class FileManager extends BaseComponent {
     this.render();
   }
 
-  protected init(): void {
+  protected override init(): void {
     super.init();
     this.setupDragDropListeners();
     this.setupKeyboardNavigation();
@@ -439,7 +439,9 @@ export class FileManager extends BaseComponent {
       const [min, max] = [Math.min(startIndex, endIndex), Math.max(startIndex, endIndex)];
       
       for (let i = min; i <= max; i++) {
-        this._selectedFiles.add(this._files[i].path);
+        if (this._files[i]) {
+          this._selectedFiles.add(this._files[i]!.path);
+        }
       }
       
       this.updateFileItemSelection();
@@ -463,7 +465,7 @@ export class FileManager extends BaseComponent {
     const fileItems = this._fileList.querySelectorAll('.file-item');
     fileItems.forEach(item => {
       const filePath = item.getAttribute('data-file-path');
-      const isSelected = filePath && this._selectedFiles.has(filePath);
+      const isSelected = Boolean(filePath && this._selectedFiles.has(filePath));
       
       item.classList.toggle('selected', isSelected);
       item.setAttribute('aria-selected', String(isSelected));
@@ -474,15 +476,15 @@ export class FileManager extends BaseComponent {
   private selectNextFile(): void {
     const selected = this.getFirstSelectedFile();
     if (!selected) {
-      if (this._files.length > 0) {
+      if (this._files.length > 0 && this._files[0]) {
         this.selectFile(this._files[0]);
       }
       return;
     }
 
     const currentIndex = this._files.findIndex(f => f.path === selected.path);
-    if (currentIndex < this._files.length - 1) {
-      this.selectFile(this._files[currentIndex + 1]);
+    if (currentIndex < this._files.length - 1 && this._files[currentIndex + 1]) {
+      this.selectFile(this._files[currentIndex + 1]!);
       this.scrollToSelectedFile();
     }
   }
@@ -492,8 +494,8 @@ export class FileManager extends BaseComponent {
     if (!selected) return;
 
     const currentIndex = this._files.findIndex(f => f.path === selected.path);
-    if (currentIndex > 0) {
-      this.selectFile(this._files[currentIndex - 1]);
+    if (currentIndex > 0 && this._files[currentIndex - 1]) {
+      this.selectFile(this._files[currentIndex - 1]!);
       this.scrollToSelectedFile();
     }
   }
@@ -550,7 +552,7 @@ export class FileManager extends BaseComponent {
       const fileName = item.querySelector('.file-name')?.textContent?.toLowerCase() || '';
       const matches = fileName.includes(query);
       
-      item.style.display = matches ? '' : 'none';
+      (item as HTMLElement).style.display = matches ? '' : 'none';
       item.setAttribute('aria-hidden', String(!matches));
     });
   }

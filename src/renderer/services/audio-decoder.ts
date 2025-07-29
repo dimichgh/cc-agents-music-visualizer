@@ -4,13 +4,13 @@
 
 import { 
   ServiceInterface, 
-  Logger, 
   AudioFile, 
   AudioMetadata, 
   ValidationResult,
   AudioProcessingConfig,
   MusicVisualizerError 
 } from '@/shared/types';
+import { Logger, AppLogger } from '@/shared/utils/logger';
 
 export interface AudioDecoderService {
   loadWavFile(filePath: string): Promise<AudioBuffer>;
@@ -23,8 +23,8 @@ export interface AudioDecoderService {
 export class AudioDecoder implements AudioDecoderService, ServiceInterface {
   private audioContext: AudioContext;
   private logger: Logger;
-  private isInitialized = false;
-  private isDisposed = false;
+  private _isInitialized = false;
+  private _isDisposed = false;
   
   // Configuration
   private config: AudioProcessingConfig = {
@@ -43,11 +43,11 @@ export class AudioDecoder implements AudioDecoderService, ServiceInterface {
 
   constructor(audioContext: AudioContext) {
     this.audioContext = audioContext;
-    this.logger = new Logger('AudioDecoder');
+    this.logger = new AppLogger('AudioDecoder');
   }
 
   async initialize(): Promise<void> {
-    if (this.isInitialized) {
+    if (this._isInitialized) {
       this.logger.warn('AudioDecoder already initialized');
       return;
     }
@@ -61,7 +61,7 @@ export class AudioDecoder implements AudioDecoderService, ServiceInterface {
         this.logger.info('Audio context resumed');
       }
 
-      this.isInitialized = true;
+      this._isInitialized = true;
       this.logger.info('AudioDecoder initialized successfully');
     } catch (error) {
       throw new MusicVisualizerError(
@@ -389,18 +389,18 @@ export class AudioDecoder implements AudioDecoderService, ServiceInterface {
   }
 
   public isInitialized(): boolean {
-    return this.isInitialized;
+    return this._isInitialized;
   }
 
   public isDisposed(): boolean {
-    return this.isDisposed;
+    return this._isDisposed;
   }
 
   public dispose(): void {
-    if (this.isDisposed) return;
+    if (this._isDisposed) return;
 
     this.logger.info('Disposing AudioDecoder...');
-    this.isDisposed = true;
+    this._isDisposed = true;
     this.logger.info('AudioDecoder disposed');
   }
 }

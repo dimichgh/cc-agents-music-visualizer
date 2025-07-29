@@ -4,19 +4,19 @@
 
 import { 
   ServiceInterface, 
-  Logger, 
   StateManager,
   ActionTypes,
   MusicVisualizerError 
 } from '@/shared/types';
+import { Logger, AppLogger } from '@/shared/utils/logger';
 import { stateSelectors } from './state-selectors';
 
 export class UIManager implements ServiceInterface {
   private stateManager: StateManager;
   private logger: Logger;
 
-  private isInitialized = false;
-  private isDisposed = false;
+  private _isInitialized = false;
+  private _isDisposed = false;
 
   // UI elements
   private elements: Record<string, HTMLElement> = {};
@@ -25,11 +25,11 @@ export class UIManager implements ServiceInterface {
 
   constructor(stateManager: StateManager) {
     this.stateManager = stateManager;
-    this.logger = new Logger('UIManager');
+    this.logger = new AppLogger('UIManager');
   }
 
   async initialize(): Promise<void> {
-    if (this.isInitialized) {
+    if (this._isInitialized) {
       this.logger.warn('UIManager already initialized');
       return;
     }
@@ -49,7 +49,7 @@ export class UIManager implements ServiceInterface {
       // Initialize UI state
       this.updateUI();
 
-      this.isInitialized = true;
+      this._isInitialized = true;
       this.logger.info('UIManager initialized successfully');
     } catch (error) {
       throw new MusicVisualizerError(
@@ -400,15 +400,15 @@ export class UIManager implements ServiceInterface {
   }
 
   public isInitialized(): boolean {
-    return this.isInitialized;
+    return this._isInitialized;
   }
 
   public isDisposed(): boolean {
-    return this.isDisposed;
+    return this._isDisposed;
   }
 
   public dispose(): void {
-    if (this.isDisposed) return;
+    if (this._isDisposed) return;
 
     this.logger.info('Disposing UIManager...');
 
@@ -420,7 +420,7 @@ export class UIManager implements ServiceInterface {
     // Remove event listeners would go here
     // (In a real implementation, we'd store references to the handlers)
 
-    this.isDisposed = true;
+    this._isDisposed = true;
     this.logger.info('UIManager disposed');
   }
 }

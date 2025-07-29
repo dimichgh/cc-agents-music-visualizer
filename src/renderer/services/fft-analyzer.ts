@@ -4,13 +4,13 @@
 
 import { 
   ServiceInterface, 
-  Logger, 
   FrequencyData, 
   BeatEvent, 
   InstrumentData,
   AudioProcessingConfig,
   MusicVisualizerError 
 } from '@/shared/types';
+import { Logger, AppLogger } from '@/shared/utils/logger';
 
 export interface FFTAnalyzer {
   analyzeFrequencies(audioData: Float32Array): FrequencyData;
@@ -25,12 +25,12 @@ export class FFTAnalyzer implements FFTAnalyzer, ServiceInterface {
   private audioContext: AudioContext;
   private analyserNode: AnalyserNode;
   private logger: Logger;
-  private isInitialized = false;
-  private isDisposed = false;
+  private _isInitialized = false;
+  private _isDisposed = false;
 
   // Analysis buffers
-  private frequencyBuffer: Float32Array;
-  private timeDomainBuffer: Float32Array;
+  private frequencyBuffer!: Float32Array;
+  private timeDomainBuffer!: Float32Array;
   private magnitudeHistory: Float32Array[] = [];
   private phaseHistory: Float32Array[] = [];
   
@@ -63,7 +63,7 @@ export class FFTAnalyzer implements FFTAnalyzer, ServiceInterface {
 
   constructor(audioContext: AudioContext) {
     this.audioContext = audioContext;
-    this.logger = new Logger('FFTAnalyzer');
+    this.logger = new AppLogger('FFTAnalyzer');
     
     // Create analyser node
     this.analyserNode = audioContext.createAnalyser();
@@ -71,7 +71,7 @@ export class FFTAnalyzer implements FFTAnalyzer, ServiceInterface {
   }
 
   async initialize(): Promise<void> {
-    if (this.isInitialized) {
+    if (this._isInitialized) {
       this.logger.warn('FFTAnalyzer already initialized');
       return;
     }
@@ -82,7 +82,7 @@ export class FFTAnalyzer implements FFTAnalyzer, ServiceInterface {
       // Initialize buffers
       this.initializeBuffers();
       
-      this.isInitialized = true;
+      this._isInitialized = true;
       this.logger.info(`FFTAnalyzer initialized: ${this.config.fftSize} FFT size, ${this.audioContext.sampleRate}Hz`);
     } catch (error) {
       throw new MusicVisualizerError(
@@ -114,7 +114,7 @@ export class FFTAnalyzer implements FFTAnalyzer, ServiceInterface {
    * Analyze current audio frequencies
    */
   analyzeFrequencies(audioData?: Float32Array): FrequencyData {
-    if (!this.isInitialized) {
+    if (!this._isInitialized) {
       throw new Error('FFTAnalyzer not initialized');
     }
 
@@ -129,7 +129,7 @@ export class FFTAnalyzer implements FFTAnalyzer, ServiceInterface {
     for (let i = 0; i < this.frequencyBuffer.length; i++) {
       // Convert dB to linear scale (0-1)
       const dbValue = this.frequencyBuffer[i];
-      const linearValue = Math.pow(10, dbValue / 20);
+      const linearValue = Math.pow(10, (dbValue || 0) / 20);
       const normalizedValue = Math.max(0, Math.min(1, linearValue));
       
       frequencies[i] = normalizedValue;
@@ -306,7 +306,8 @@ export class FFTAnalyzer implements FFTAnalyzer, ServiceInterface {
   private calculateBassEnergy(magnitudes: Float32Array): number {
     let energy = 0;
     for (let i = this.beatDetection.bassRange.start; i < this.beatDetection.bassRange.end; i++) {
-      energy += magnitudes[i] * magnitudes[i];
+      const magnitude = magnitudes[i] || 0;
+      energy += magnitude * magnitude;
     }
     return energy / (this.beatDetection.bassRange.end - this.beatDetection.bassRange.start);
   }
@@ -339,7 +340,8 @@ export class FFTAnalyzer implements FFTAnalyzer, ServiceInterface {
   private calculateEnergyRange(magnitudes: Float32Array, start: number, end: number): number {
     let energy = 0;
     for (let i = start; i < Math.min(end, magnitudes.length); i++) {
-      energy += magnitudes[i] * magnitudes[i];
+      const magnitude = magnitudes[i] || 0;
+      energy += magnitude * magnitude;
     }
     return energy / (end - start);
   }
@@ -364,7 +366,7 @@ export class FFTAnalyzer implements FFTAnalyzer, ServiceInterface {
     // Calculate total energy
     let totalEnergy = 0;
     for (let i = 0; i < spectrum.length; i++) {
-      totalEnergy += spectrum[i];
+      totalEnergy += spectrum[i] || 0;
     }
 
     if (totalEnergy === 0) return features;
@@ -372,7 +374,7 @@ export class FFTAnalyzer implements FFTAnalyzer, ServiceInterface {
     // Spectral centroid (brightness)
     let weightedSum = 0;
     for (let i = 0; i < spectrum.length; i++) {
-      weightedSum += i * spectrum[i];
+      weightedSum += i * (spectrum[i] || 0);
     }
     features.spectralCentroid = weightedSum / totalEnergy / spectrum.length;
 
@@ -380,7 +382,7 @@ export class FFTAnalyzer implements FFTAnalyzer, ServiceInterface {
     let spreadSum = 0;
     for (let i = 0; i < spectrum.length; i++) {
       const normalizedFreq = i / spectrum.length;
-      spreadSum += Math.pow(normalizedFreq - features.spectralCentroid, 2) * spectrum[i];
+      spreadSum += Math.pow(normalizedFreq - features.spectralCentroid, 2) * (spectrum[i] || 0);
     }
     features.spectralSpread = Math.sqrt(spreadSum / totalEnergy);
 
@@ -392,8 +394,9 @@ export class FFTAnalyzer implements FFTAnalyzer, ServiceInterface {
     let maxBin = 0;
     let maxValue = 0;
     for (let i = 1; i < Math.min(256, spectrum.length); i++) {
-      if (spectrum[i] > maxValue) {
-        maxValue = spectrum[i];
+      const value = spectrum[i] || 0;
+      if (value > maxValue) {
+        maxValue = value;
         maxBin = i;
       }
     }
@@ -401,7 +404,7 @@ export class FFTAnalyzer implements FFTAnalyzer, ServiceInterface {
     features.amplitude = maxValue;
 
     // Harmonic ratio (simplified)
-    const harmonicEnergy = spectrum[maxBin] + 
+    const harmonicEnergy = (spectrum[maxBin] || 0) + 
                           (spectrum[maxBin * 2] || 0) + 
                           (spectrum[maxBin * 3] || 0);
     features.harmonicRatio = harmonicEnergy / totalEnergy;
@@ -412,9 +415,11 @@ export class FFTAnalyzer implements FFTAnalyzer, ServiceInterface {
         this.instrumentClassification.spectralFeatures.length - 1
       ];
       let fluxSum = 0;
-      for (let i = 0; i < Math.min(spectrum.length, prevSpectrum.length); i++) {
-        const diff = spectrum[i] - prevSpectrum[i];
-        fluxSum += diff > 0 ? diff : 0;
+      if (prevSpectrum) {
+        for (let i = 0; i < Math.min(spectrum.length, prevSpectrum.length); i++) {
+          const diff = (spectrum[i] || 0) - (prevSpectrum[i] || 0);
+          fluxSum += diff > 0 ? diff : 0;
+        }
       }
       features.spectralFlux = fluxSum / spectrum.length;
     }
@@ -423,7 +428,7 @@ export class FFTAnalyzer implements FFTAnalyzer, ServiceInterface {
     let cumulativeEnergy = 0;
     const rolloffThreshold = 0.85 * totalEnergy;
     for (let i = 0; i < spectrum.length; i++) {
-      cumulativeEnergy += spectrum[i];
+      cumulativeEnergy += spectrum[i] || 0;
       if (cumulativeEnergy >= rolloffThreshold) {
         features.spectralRolloff = i / spectrum.length;
         break;
@@ -436,8 +441,10 @@ export class FFTAnalyzer implements FFTAnalyzer, ServiceInterface {
     // Spectral complexity (number of significant peaks)
     let peakCount = 0;
     for (let i = 1; i < spectrum.length - 1; i++) {
-      if (spectrum[i] > spectrum[i-1] && spectrum[i] > spectrum[i+1] && 
-          spectrum[i] > totalEnergy * 0.1) {
+      const current = spectrum[i] || 0;
+      const prev = spectrum[i-1] || 0;
+      const next = spectrum[i+1] || 0;
+      if (current > prev && current > next && current > totalEnergy * 0.1) {
         peakCount++;
       }
     }
@@ -495,15 +502,15 @@ export class FFTAnalyzer implements FFTAnalyzer, ServiceInterface {
   }
 
   public isInitialized(): boolean {
-    return this.isInitialized;
+    return this._isInitialized;
   }
 
   public isDisposed(): boolean {
-    return this.isDisposed;
+    return this._isDisposed;
   }
 
   public dispose(): void {
-    if (this.isDisposed) return;
+    if (this._isDisposed) return;
 
     this.logger.info('Disposing FFTAnalyzer...');
     
@@ -519,7 +526,7 @@ export class FFTAnalyzer implements FFTAnalyzer, ServiceInterface {
     this.beatDetection.energyHistory = [];
     this.instrumentClassification.spectralFeatures = [];
 
-    this.isDisposed = true;
+    this._isDisposed = true;
     this.logger.info('FFTAnalyzer disposed');
   }
 }

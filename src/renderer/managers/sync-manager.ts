@@ -4,11 +4,11 @@
 
 import { 
   ServiceInterface, 
-  Logger, 
   AudioFeatures,
   VisualEvent,
   MusicVisualizerError 
 } from '@/shared/types';
+import { Logger, AppLogger } from '@/shared/utils/logger';
 
 export interface SyncManager {
   synchronizeAudioVisual(audioTime: number, visualTime: number): void;
@@ -22,8 +22,8 @@ export interface SyncManager {
 
 export class AudioVisualSyncManager implements SyncManager, ServiceInterface {
   private logger: Logger;
-  private isInitialized = false;
-  private isDisposed = false;
+  private _isInitialized = false;
+  private _isDisposed = false;
 
   // Timing and synchronization
   private audioContext: AudioContext;
@@ -56,11 +56,11 @@ export class AudioVisualSyncManager implements SyncManager, ServiceInterface {
 
   constructor(audioContext: AudioContext) {
     this.audioContext = audioContext;
-    this.logger = new Logger('SyncManager');
+    this.logger = new AppLogger('SyncManager');
   }
 
   async initialize(): Promise<void> {
-    if (this.isInitialized) {
+    if (this._isInitialized) {
       this.logger.warn('SyncManager already initialized');
       return;
     }
@@ -77,7 +77,7 @@ export class AudioVisualSyncManager implements SyncManager, ServiceInterface {
       // Initialize performance monitoring
       this.initializePerformanceMonitoring();
 
-      this.isInitialized = true;
+      this._isInitialized = true;
       this.logger.info(`SyncManager initialized with ${this.baseLatency}ms base latency`);
     } catch (error) {
       throw new MusicVisualizerError(
@@ -140,7 +140,7 @@ export class AudioVisualSyncManager implements SyncManager, ServiceInterface {
    * Main synchronization method called each frame
    */
   synchronizeAudioVisual(audioTime: number, visualTime: number): void {
-    if (!this.isInitialized) return;
+    if (!this._isInitialized) return;
 
     const currentTime = performance.now();
     
@@ -207,14 +207,14 @@ export class AudioVisualSyncManager implements SyncManager, ServiceInterface {
 
     for (let i = 0; i < this.scheduledEvents.length; i++) {
       const event = this.scheduledEvents[i];
-      const eventTime = event.timestamp;
+      const eventTime = event?.timestamp;
       
       // Check if event should trigger (within tolerance)
-      if (Math.abs(currentAudioTime - eventTime) <= this.eventTolerance) {
-        triggeredEvents.push(event);
+      if (eventTime !== undefined && Math.abs(currentAudioTime - eventTime) <= this.eventTolerance) {
+        if (event) triggeredEvents.push(event);
         this.scheduledEvents.splice(i, 1);
         i--; // Adjust index after removal
-      } else if (eventTime > currentAudioTime + this.eventTolerance) {
+      } else if (eventTime !== undefined && eventTime > currentAudioTime + this.eventTolerance) {
         // Events are sorted, so we can stop checking
         break;
       }
@@ -304,11 +304,16 @@ export class AudioVisualSyncManager implements SyncManager, ServiceInterface {
     // Calculate frame intervals
     const intervals: number[] = [];
     for (let i = 1; i < frameHistory.length; i++) {
-      intervals.push(frameHistory[i] - frameHistory[i - 1]);
+      const prev = frameHistory[i - 1];
+      const curr = frameHistory[i];
+      if (prev !== undefined && curr !== undefined) {
+        intervals.push(curr - prev);
+      }
     }
 
     // Current FPS (based on last interval)
-    const currentFPS = 1000 / intervals[intervals.length - 1];
+    const lastInterval = intervals[intervals.length - 1];
+    const currentFPS = lastInterval !== undefined ? 1000 / lastInterval : 0;
 
     // Average FPS
     const avgInterval = intervals.reduce((sum, interval) => sum + interval, 0) / intervals.length;
@@ -372,15 +377,15 @@ export class AudioVisualSyncManager implements SyncManager, ServiceInterface {
   }
 
   public isInitialized(): boolean {
-    return this.isInitialized;
+    return this._isInitialized;
   }
 
   public isDisposed(): boolean {
-    return this.isDisposed;
+    return this._isDisposed;
   }
 
   public dispose(): void {
-    if (this.isDisposed) return;
+    if (this._isDisposed) return;
 
     this.logger.info('Disposing SyncManager...');
 
@@ -390,7 +395,7 @@ export class AudioVisualSyncManager implements SyncManager, ServiceInterface {
     // Clear performance history
     this.initializePerformanceMonitoring();
 
-    this.isDisposed = true;
+    this._isDisposed = true;
     this.logger.info('SyncManager disposed');
   }
 }

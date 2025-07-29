@@ -7,19 +7,19 @@ import * as THREE from 'three';
 
 export class VisualizationCanvas extends BaseComponent {
   private _options: VisualizationOptions;
-  private _canvasContainer: HTMLElement;
-  private _overlayControls: HTMLElement;
-  private _canvas: HTMLCanvasElement;
-  private _overlayCanvas: HTMLCanvasElement;
-  private _fullscreenButton: CosmicButton;
-  private _recordButton: CosmicButton;
-  private _settingsButton: CosmicButton;
-  private _presetSelector: HTMLElement;
+  private _canvasContainer!: HTMLElement;
+  private _overlayControls!: HTMLElement;
+  private _canvas!: HTMLCanvasElement;
+  private _overlayCanvas!: HTMLCanvasElement;
+  private _fullscreenButton!: CosmicButton;
+  private _recordButton!: CosmicButton;
+  private _settingsButton!: CosmicButton;
+  private _presetSelector!: HTMLSelectElement;
   
   // Three.js components
-  private _scene: THREE.Scene;
-  private _camera: THREE.PerspectiveCamera;
-  private _renderer: THREE.WebGLRenderer;
+  private _scene!: THREE.Scene;
+  private _camera!: THREE.PerspectiveCamera;
+  private _renderer!: THREE.WebGLRenderer;
   private _animationFrame: number = 0;
   
   // Visualization state
@@ -30,8 +30,8 @@ export class VisualizationCanvas extends BaseComponent {
   private _frequencyData: Float32Array = new Float32Array(512);
   
   // Cosmic effects
-  private _particleSystem: THREE.Points;
-  private _nebulaField: THREE.Mesh;
+  private _particleSystem!: THREE.Points;
+  private _nebulaField!: THREE.Mesh;
   private _energyTrails: THREE.Line[] = [];
   private _geometryPool: Map<string, THREE.BufferGeometry> = new Map();
   private _materialPool: Map<string, THREE.Material> = new Map();
@@ -52,7 +52,7 @@ export class VisualizationCanvas extends BaseComponent {
     this.createCosmicScene();
   }
 
-  protected init(): void {
+  protected override init(): void {
     super.init();
     this.setupResizeObserver();
     this.setupFullscreenListeners();
@@ -401,9 +401,13 @@ export class VisualizationCanvas extends BaseComponent {
     
     // Update particle system
     const particleMaterial = this._materialPool.get('particles') as THREE.ShaderMaterial;
-    if (particleMaterial) {
-      particleMaterial.uniforms.time.value = timeSeconds;
-      particleMaterial.uniforms.audioLevel.value = this.getAverageAudioLevel();
+    if (particleMaterial && particleMaterial.uniforms) {
+      if (particleMaterial.uniforms['time']) {
+        particleMaterial.uniforms['time'].value = timeSeconds;
+      }
+      if (particleMaterial.uniforms['audioLevel']) {
+        particleMaterial.uniforms['audioLevel'].value = this.getAverageAudioLevel();
+      }
     }
     
     // Rotate particle system based on audio
@@ -414,10 +418,13 @@ export class VisualizationCanvas extends BaseComponent {
     
     // Update nebula field
     const nebulaMaterial = this._materialPool.get('nebula') as THREE.ShaderMaterial;
-    if (nebulaMaterial) {
-      nebulaMaterial.uniforms.time.value = timeSeconds;
-      // Update frequency data texture
-      nebulaMaterial.uniforms.audioFreq.value.needsUpdate = true;
+    if (nebulaMaterial && nebulaMaterial.uniforms) {
+      if (nebulaMaterial.uniforms['time']) {
+        nebulaMaterial.uniforms['time'].value = timeSeconds;
+      }
+      if (nebulaMaterial.uniforms['audioFreq'] && nebulaMaterial.uniforms['audioFreq'].value) {
+        nebulaMaterial.uniforms['audioFreq'].value.needsUpdate = true;
+      }
     }
     
     // Camera movement based on audio
@@ -435,7 +442,7 @@ export class VisualizationCanvas extends BaseComponent {
     
     let sum = 0;
     for (let i = 0; i < this._audioData.length; i++) {
-      sum += Math.abs(this._audioData[i]);
+      sum += Math.abs(this._audioData[i] || 0);
     }
     return sum / this._audioData.length;
   }
@@ -541,7 +548,7 @@ export class VisualizationCanvas extends BaseComponent {
   private updateMouseInteraction(mousePosition: { x: number, y: number }): void {
     // Attract particles to mouse position
     if (this._particleSystem) {
-      const positions = (this._particleSystem.geometry as THREE.BufferGeometry).attributes.position as THREE.BufferAttribute;
+      const positions = (this._particleSystem.geometry as THREE.BufferGeometry).attributes['position'] as THREE.BufferAttribute;
       const mouseVector = new THREE.Vector3(mousePosition.x * 10, mousePosition.y * 10, 0);
       
       // Apply subtle attraction force (implement if needed for performance)
@@ -588,9 +595,9 @@ export class VisualizationCanvas extends BaseComponent {
     
     // Update frequency data texture
     const nebulaMaterial = this._materialPool.get('nebula') as THREE.ShaderMaterial;
-    if (nebulaMaterial) {
-      nebulaMaterial.uniforms.audioFreq.value.image.data = frequencyData;
-      nebulaMaterial.uniforms.audioFreq.value.needsUpdate = true;
+    if (nebulaMaterial && nebulaMaterial.uniforms['audioFreq']) {
+      nebulaMaterial.uniforms['audioFreq'].value.image.data = frequencyData;
+      nebulaMaterial.uniforms['audioFreq'].value.needsUpdate = true;
     }
   }
 
@@ -621,7 +628,7 @@ export class VisualizationCanvas extends BaseComponent {
     // Update particle colors
     const geometry = this._geometryPool.get('particles') as THREE.BufferGeometry;
     if (geometry) {
-      const colorAttribute = geometry.attributes.color as THREE.BufferAttribute;
+      const colorAttribute = geometry.attributes['color'] as THREE.BufferAttribute;
       const colorArray = colorAttribute.array as Float32Array;
       
       for (let i = 0; i < colorArray.length; i += 3) {
@@ -737,7 +744,7 @@ export class VisualizationCanvas extends BaseComponent {
   }
 
   // Cleanup
-  destroy(): void {
+  override destroy(): void {
     if (this._animationFrame) {
       cancelAnimationFrame(this._animationFrame);
     }

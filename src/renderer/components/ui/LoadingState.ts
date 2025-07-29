@@ -6,13 +6,13 @@ import { LoadingOptions } from '../../types/ui-types';
 
 export class LoadingState extends BaseComponent {
   private _options: LoadingOptions;
-  private _spinnerContainer: HTMLElement;
-  private _messageContainer: HTMLElement;
-  private _progressContainer: HTMLElement;
-  private _actionContainer: HTMLElement;
-  private _progressBar: HTMLElement;
-  private _progressText: HTMLElement;
-  private _cancelButton?: CosmicButton;
+  private _spinnerContainer!: HTMLElement;
+  private _messageContainer!: HTMLElement;
+  private _progressContainer!: HTMLElement;
+  private _actionContainer!: HTMLElement;
+  private _progressBar!: HTMLElement;
+  private _progressText!: HTMLElement;
+  private _cancelButton?: CosmicButton | undefined;
   
   private _currentProgress: number = 0;
   private _animationFrame: number = 0;
@@ -21,7 +21,6 @@ export class LoadingState extends BaseComponent {
     super('div');
     this._options = {
       message: 'Loading cosmic frequencies...',
-      progress: undefined,
       cancelable: false,
       ...options
     };
@@ -242,6 +241,11 @@ export class LoadingState extends BaseComponent {
     }
   }
 
+  // Get current options
+  getOptions(): LoadingOptions {
+    return { ...this._options };
+  }
+
   // Animation control
   pauseAnimation(): void {
     if (this._animationFrame) {
@@ -302,7 +306,7 @@ export class LoadingState extends BaseComponent {
   }
 
   // Cleanup
-  destroy(): void {
+  override destroy(): void {
     this.pauseAnimation();
     super.destroy();
   }
@@ -311,7 +315,7 @@ export class LoadingState extends BaseComponent {
 // Loading overlay component for full-screen loading
 export class LoadingOverlay extends BaseComponent {
   private _loadingState: LoadingState;
-  private _backdrop: HTMLElement;
+  private _backdrop!: HTMLElement;
 
   constructor(options: LoadingOptions = {}) {
     super('div');
@@ -356,7 +360,7 @@ export class LoadingOverlay extends BaseComponent {
 
     // Handle escape key
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && this._loadingState._options.cancelable) {
+      if (event.key === 'Escape' && this._loadingState.getOptions().cancelable) {
         this.close();
       }
     };
@@ -402,7 +406,7 @@ export class LoadingOverlay extends BaseComponent {
   }
 
   // Forward events from internal LoadingState
-  on(event: string, listener: (...args: any[]) => void): void {
+  override on(event: string, listener: (...args: any[]) => void): void {
     if (event === 'cancel' || event === 'progressUpdate') {
       this._loadingState.on(event, listener);
     } else {
@@ -410,7 +414,7 @@ export class LoadingOverlay extends BaseComponent {
     }
   }
 
-  destroy(): void {
+  override destroy(): void {
     document.body.style.overflow = '';
     this._loadingState.destroy();
     super.destroy();

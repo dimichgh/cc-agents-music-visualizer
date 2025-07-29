@@ -18,7 +18,7 @@ import {
   PlaybackStatus,
   PerformanceMetrics
 } from '@/shared/types';
-import { Logger } from '@/shared/utils/logger';
+import { Logger, AppLogger } from '@/shared/utils/logger';
 
 export class StateManager implements IStateManager {
   private state: AppState;
@@ -26,11 +26,11 @@ export class StateManager implements IStateManager {
   private logger: Logger;
 
   constructor() {
-    this.logger = new Logger('StateManager');
+    this.logger = new AppLogger('StateManager');
     this.state = this.createInitialState();
     
     // Log state changes in development
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env['NODE_ENV'] === 'development') {
       this.subscribe((state) => {
         this.logger.debug('State updated:', state);
       });
@@ -345,13 +345,13 @@ export class StateManager implements IStateManager {
       message,
       timestamp: Date.now(),
       autoHide: type !== 'error',
-      duration: type === 'error' ? undefined : 5000,
+      ...(type === 'error' ? {} : { duration: 5000 }),
     };
 
     this.setState({
       ui: {
         ...this.state.ui,
-        notifications: [...this.state.ui.notifications, notification],
+        notifications: [...this.state.ui.notifications, notification as any],
       },
     });
 

@@ -7,18 +7,18 @@ import {
   Scene,
   PerspectiveCamera,
   Vector3,
+  Vector2,
   Color,
   Fog,
   Clock,
   RenderTarget,
   WebGLRenderTarget,
-  EffectComposer,
-  RenderPass,
 } from 'three';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 
 import {
   ServiceInterface,
-  Logger,
   VisualizationConfig,
   PerformanceMetrics,
   AudioFeatures,
@@ -26,6 +26,7 @@ import {
   TextureSize,
   MemoryStats,
 } from '@/shared/types';
+import { Logger, AppLogger } from '@/shared/utils/logger';
 
 export interface VisualizationRenderer {
   render(deltaTime: number, audioFeatures: AudioFeatures): void;
@@ -37,15 +38,15 @@ export interface VisualizationRenderer {
 
 export class WebGLVisualizationRenderer implements VisualizationRenderer, ServiceInterface {
   private canvas: HTMLCanvasElement;
-  private renderer: WebGLRenderer;
-  private scene: Scene;
-  private camera: PerspectiveCamera;
+  private renderer!: WebGLRenderer;
+  private scene!: Scene;
+  private camera!: PerspectiveCamera;
   private clock: Clock;
   private composer: EffectComposer | null = null;
   
   private logger: Logger;
-  private isInitialized = false;
-  private isDisposed = false;
+  private _isInitialized = false;
+  private _isDisposed = false;
 
   // Configuration
   private config: VisualizationConfig = {
@@ -86,12 +87,12 @@ export class WebGLVisualizationRenderer implements VisualizationRenderer, Servic
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
-    this.logger = new Logger('WebGLRenderer');
+    this.logger = new AppLogger('WebGLRenderer');
     this.clock = new Clock();
   }
 
   async initialize(): Promise<void> {
-    if (this.isInitialized) {
+    if (this._isInitialized) {
       this.logger.warn('WebGL renderer already initialized');
       return;
     }
@@ -119,7 +120,7 @@ export class WebGLVisualizationRenderer implements VisualizationRenderer, Servic
       // Set initial size
       this.resize(this.canvas.clientWidth, this.canvas.clientHeight);
 
-      this.isInitialized = true;
+      this._isInitialized = true;
       this.logger.info('WebGL renderer initialized successfully');
     } catch (error) {
       throw new MusicVisualizerError(
@@ -239,7 +240,7 @@ export class WebGLVisualizationRenderer implements VisualizationRenderer, Servic
 
       // Add bloom effect for cosmic glow
       const bloomPass = new UnrealBloomPass(
-        new Vector3(this.canvas.clientWidth, this.canvas.clientHeight),
+        new Vector2(this.canvas.clientWidth, this.canvas.clientHeight),
         0.5, // strength
         0.4, // radius
         0.85 // threshold
@@ -247,7 +248,7 @@ export class WebGLVisualizationRenderer implements VisualizationRenderer, Servic
       this.composer.addPass(bloomPass);
 
       // Add film grain for ethereal feel
-      const filmPass = new FilmPass(0.35, 0.025, 648, false);
+      const filmPass = new FilmPass(0.35, false);
       this.composer.addPass(filmPass);
 
       this.logger.debug('Post-processing initialized');
@@ -262,7 +263,7 @@ export class WebGLVisualizationRenderer implements VisualizationRenderer, Servic
    * Main render loop
    */
   render(deltaTime: number, audioFeatures: AudioFeatures): void {
-    if (!this.isInitialized) {
+    if (!this._isInitialized) {
       this.logger.warn('Attempted to render before initialization');
       return;
     }
@@ -386,7 +387,7 @@ export class WebGLVisualizationRenderer implements VisualizationRenderer, Servic
    * Resize renderer and camera
    */
   resize(width: number, height: number): void {
-    if (!this.isInitialized) return;
+    if (!this._isInitialized) return;
 
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
@@ -559,15 +560,15 @@ export class WebGLVisualizationRenderer implements VisualizationRenderer, Servic
   }
 
   public isInitialized(): boolean {
-    return this.isInitialized;
+    return this._isInitialized;
   }
 
   public isDisposed(): boolean {
-    return this.isDisposed;
+    return this._isDisposed;
   }
 
   public dispose(): void {
-    if (this.isDisposed) return;
+    if (this._isDisposed) return;
 
     this.logger.info('Disposing WebGL renderer...');
 
@@ -596,7 +597,7 @@ export class WebGLVisualizationRenderer implements VisualizationRenderer, Servic
     // Dispose renderer
     this.renderer.dispose();
 
-    this.isDisposed = true;
+    this._isDisposed = true;
     this.logger.info('WebGL renderer disposed');
   }
 }

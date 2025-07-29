@@ -31,9 +31,9 @@ export function createMockCanvas(width: number = 800, height: number = 600): HTM
   canvas.width = width;
   canvas.height = height;
   
-  // Mock getContext method
+  // Mock getContext method with proper typing
   const originalGetContext = canvas.getContext.bind(canvas);
-  canvas.getContext = (contextType: string, options?: any) => {
+  (canvas.getContext as any) = (contextType: string, options?: any) => {
     if (contextType === 'webgl' || contextType === 'webgl2') {
       return createMockWebGLContext();
     }
@@ -132,8 +132,12 @@ export function createMockFileList(files: File[]): FileList {
   const fileList = {
     length: files.length,
     item: (index: number) => files[index] || null,
-    ...files,
   };
+  
+  // Add file indices without spreading to avoid length conflict
+  files.forEach((file, index) => {
+    (fileList as any)[index] = file;
+  });
   
   return fileList as FileList;
 }

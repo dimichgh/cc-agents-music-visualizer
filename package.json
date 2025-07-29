@@ -18,9 +18,9 @@
     "dev:renderer": "webpack serve --config webpack.renderer.config.js",
     "start": "electron .",
     "start:dev": "cross-env NODE_ENV=development electron .",
-    "test": "mocha",
-    "test:watch": "mocha --watch",
-    "test:coverage": "nyc mocha",
+    "test": "cross-env TS_NODE_PROJECT=tsconfig.test.json mocha",
+    "test:watch": "cross-env TS_NODE_PROJECT=tsconfig.test.json mocha --watch",
+    "test:coverage": "cross-env TS_NODE_PROJECT=tsconfig.test.json nyc mocha",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
     "format": "prettier --write \"src/**/*.{ts,js,json}\"",
@@ -85,15 +85,6 @@
     "linux": {
       "target": "AppImage"
     }
-  },
-  "mocha": {
-    "require": [
-      "ts-node/register",
-      "test/setup.ts"
-    ],
-    "spec": "test/**/*.test.ts",
-    "timeout": 5000,
-    "recursive": true
   },
   "nyc": {
     "extension": [

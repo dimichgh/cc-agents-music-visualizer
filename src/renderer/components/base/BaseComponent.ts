@@ -327,12 +327,8 @@ export abstract class BaseComponent implements CosmicComponent, EventEmitter {
     this._destroyed = true;
     this._listeners.clear();
     
-    // Remove all event listeners
-    this._element.removeEventListener('focus', this.handleKeyDown);
-    this._element.removeEventListener('blur', this.handleKeyDown);
-    this._element.removeEventListener('mouseenter', this.handleKeyDown);
-    this._element.removeEventListener('mouseleave', this.handleKeyDown);
-    this._element.removeEventListener('keydown', this.handleKeyDown);
+    // Note: Arrow function event listeners cannot be easily removed
+    // They will be cleaned up when the element is removed from DOM
     
     // Remove from DOM
     this.remove();
@@ -403,7 +399,7 @@ export abstract class BaseComponent implements CosmicComponent, EventEmitter {
 
   protected throttle(func: Function, wait: number): Function {
     let inThrottle: boolean;
-    return function executedFunction(...args: any[]) {
+    return (...args: any[]) => {
       if (!inThrottle) {
         func.apply(this, args);
         inThrottle = true;
