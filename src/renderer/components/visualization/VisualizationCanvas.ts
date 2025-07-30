@@ -12,9 +12,6 @@ export class VisualizationCanvas extends BaseComponent {
   private _canvas!: HTMLCanvasElement;
   private _overlayCanvas!: HTMLCanvasElement;
   private _fullscreenButton!: CosmicButton;
-  private _recordButton!: CosmicButton;
-  private _settingsButton!: CosmicButton;
-  private _presetSelector!: HTMLSelectElement;
   
   // Three.js components
   private _scene!: THREE.Scene;
@@ -26,8 +23,10 @@ export class VisualizationCanvas extends BaseComponent {
   private _isFullscreen: boolean = false;
   private _isRecording: boolean = false;
   private _currentPreset: string = 'cosmic-symphony';
+  private _intensity: number = 1.0;
   private _audioData: Float32Array = new Float32Array(1024);
   private _frequencyData: Float32Array = new Float32Array(512);
+  private _resizeTimeout: number = 0;
   
   // Cosmic effects
   private _particleSystem!: THREE.Points;
@@ -60,7 +59,7 @@ export class VisualizationCanvas extends BaseComponent {
   }
 
   private setupResizeObserver(): void {
-    if (this._options.responsive) {
+    if (this._options && this._options.responsive) {
       const resizeObserver = new ResizeObserver(entries => {
         for (const entry of entries) {
           const { width, height } = entry.contentRect;
@@ -69,7 +68,21 @@ export class VisualizationCanvas extends BaseComponent {
       });
       
       resizeObserver.observe(this._element);
+      
+      // Also listen for window resize events for better responsiveness
+      window.addEventListener('resize', this.handleWindowResize.bind(this));
     }
+  }
+
+  private handleWindowResize(): void {
+    // Debounce resize events to prevent excessive updates
+    clearTimeout(this._resizeTimeout);
+    this._resizeTimeout = window.setTimeout(() => {
+      const rect = this._element.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        this.resize(rect.width, rect.height);
+      }
+    }, 100);
   }
 
   private setupFullscreenListeners(): void {
@@ -94,7 +107,7 @@ export class VisualizationCanvas extends BaseComponent {
   }
 
   private setupInteractionListeners(): void {
-    if (!this._options.interactive) return;
+    if (!this._options || !this._options.interactive) return;
 
     let mousePosition = { x: 0, y: 0 };
     let lastMouseMove = 0;
@@ -170,49 +183,19 @@ export class VisualizationCanvas extends BaseComponent {
     this._overlayControls = document.createElement('div');
     this._overlayControls.className = 'overlay-controls';
     
-    // Top controls
-    const topControls = document.createElement('div');
-    topControls.className = 'top-controls';
-    
-    this._presetSelector = document.createElement('select');
-    this._presetSelector.className = 'cosmic-dropdown preset-selector';
-    this._presetSelector.innerHTML = `
-      <option value="cosmic-symphony">Cosmic Symphony</option>
-      <option value="stellar-nursery">Stellar Nursery</option>
-      <option value="galactic-core">Galactic Core</option>
-      <option value="solar-wind">Solar Wind</option>
-      <option value="quantum-field">Quantum Field</option>
-      <option value="nebula-dance">Nebula Dance</option>
-    `;
-    this._presetSelector.value = this._currentPreset;
-    this._presetSelector.addEventListener('change', this.handlePresetChange.bind(this));
-    
-    topControls.appendChild(this._presetSelector);
-    
-    // Bottom controls
+    // Simplified controls - only essential buttons
     const bottomControls = document.createElement('div');
     bottomControls.className = 'bottom-controls';
-    
-    this._recordButton = CosmicButton.icon('record', {
-      ariaLabel: 'Record visualization',
-      onClick: () => this.toggleRecording()
-    });
-    
-    this._settingsButton = CosmicButton.icon('settings', {
-      ariaLabel: 'Visualization settings',
-      onClick: () => this.openSettings()
-    });
     
     this._fullscreenButton = CosmicButton.icon('fullscreen', {
       ariaLabel: 'Enter fullscreen',
       onClick: () => this.toggleFullscreen()
     });
     
-    bottomControls.appendChild(this._recordButton.element);
-    bottomControls.appendChild(this._settingsButton.element);
+    // Only add fullscreen button for simplicity
     bottomControls.appendChild(this._fullscreenButton.element);
     
-    this._overlayControls.appendChild(topControls);
+    // Remove top controls entirely to simplify
     this._overlayControls.appendChild(bottomControls);
     this._canvasContainer.appendChild(this._overlayControls);
   }
@@ -305,6 +288,7 @@ export class VisualizationCanvas extends BaseComponent {
       uniforms: {
         time: { value: 0 },
         audioLevel: { value: 0 },
+        intensity: { value: this._intensity },
         pointTexture: { value: this.createParticleTexture() }
       },
       vertexShader: this.getParticleVertexShader(),
@@ -453,6 +437,7 @@ export class VisualizationCanvas extends BaseComponent {
       attribute float size;
       uniform float time;
       uniform float audioLevel;
+      uniform float intensity;
       varying vec3 vColor;
       
       void main() {
@@ -460,8 +445,8 @@ export class VisualizationCanvas extends BaseComponent {
         
         vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
         
-        // Audio-reactive size
-        float audioSize = size * (1.0 + audioLevel * 2.0);
+        // Audio-reactive size with intensity control
+        float audioSize = size * intensity * (1.0 + audioLevel * 2.0);
         
         gl_PointSize = audioSize * (300.0 / -mvPosition.z);
         gl_Position = projectionMatrix * mvPosition;
@@ -472,10 +457,11 @@ export class VisualizationCanvas extends BaseComponent {
   private getParticleFragmentShader(): string {
     return `
       uniform sampler2D pointTexture;
+      uniform float intensity;
       varying vec3 vColor;
       
       void main() {
-        gl_FragColor = vec4(vColor, 1.0);
+        gl_FragColor = vec4(vColor, intensity);
         gl_FragColor = gl_FragColor * texture2D(pointTexture, gl_PointCoord);
         
         if (gl_FragColor.a < 0.001) discard;
@@ -532,12 +518,6 @@ export class VisualizationCanvas extends BaseComponent {
   }
 
   // Event handlers
-  private handlePresetChange(event: Event): void {
-    const target = event.target as HTMLSelectElement;
-    this._currentPreset = target.value;
-    this.applyPreset(this._currentPreset);
-    this.emit('presetChange', this._currentPreset);
-  }
 
   private handleCanvasClick(mousePosition: { x: number, y: number }): void {
     // Create energy burst at click position
@@ -690,46 +670,41 @@ export class VisualizationCanvas extends BaseComponent {
     this.emit('fullscreenChange', this._isFullscreen);
   }
 
-  private toggleRecording(): void {
-    this._isRecording = !this._isRecording;
-    
-    if (this._isRecording) {
-      this.startRecording();
-    } else {
-      this.stopRecording();
-    }
-  }
-
-  private startRecording(): void {
-    this._recordButton.setIcon('stop-record');
-    this._recordButton.setAccessibility({ ariaLabel: 'Stop recording' });
-    this._recordButton.addClass('recording');
-    
-    this.emit('recordingStart');
-  }
-
-  private stopRecording(): void {
-    this._recordButton.setIcon('record');
-    this._recordButton.setAccessibility({ ariaLabel: 'Record visualization' });
-    this._recordButton.removeClass('recording');
-    
-    this.emit('recordingStop');
-  }
-
-  private openSettings(): void {
-    this.emit('settingsOpen');
-  }
 
   resize(width: number, height: number): void {
+    if (width <= 0 || height <= 0) return;
+    
+    // Update canvas dimensions
     this._canvas.width = width;
     this._canvas.height = height;
     this._overlayCanvas.width = width;
     this._overlayCanvas.height = height;
     
-    this._camera.aspect = width / height;
-    this._camera.updateProjectionMatrix();
+    // Update canvas style dimensions for responsive display
+    this._canvas.style.width = `${width}px`;
+    this._canvas.style.height = `${height}px`;
+    this._overlayCanvas.style.width = `${width}px`;
+    this._overlayCanvas.style.height = `${height}px`;
     
-    this._renderer.setSize(width, height);
+    // Update Three.js camera aspect ratio
+    if (this._camera) {
+      this._camera.aspect = width / height;
+      this._camera.updateProjectionMatrix();
+    }
+    
+    // Update Three.js renderer size
+    if (this._renderer) {
+      this._renderer.setSize(width, height, false); // false prevents CSS scaling
+      
+      // Update viewport
+      this._renderer.setViewport(0, 0, width, height);
+    }
+    
+    // Update nebula field resolution uniform if it exists
+    const nebulaMaterial = this._materialPool.get('nebula') as THREE.ShaderMaterial;
+    if (nebulaMaterial && nebulaMaterial.uniforms['resolution']) {
+      nebulaMaterial.uniforms['resolution'].value.set(width, height);
+    }
     
     if (this._options.onResize) {
       this._options.onResize(width, height);
@@ -743,11 +718,38 @@ export class VisualizationCanvas extends BaseComponent {
     this._scene.background = new THREE.Color(color);
   }
 
+  setIntensity(intensity: number): void {
+    this._intensity = Math.max(0.1, Math.min(2.0, intensity));
+    
+    // Update particle system intensity
+    const particleMaterial = this._materialPool.get('particles') as THREE.ShaderMaterial;
+    if (particleMaterial && particleMaterial.uniforms && particleMaterial.uniforms['intensity']) {
+      particleMaterial.uniforms['intensity'].value = this._intensity;
+    }
+    
+    // Update nebula intensity
+    const nebulaMaterial = this._materialPool.get('nebula') as THREE.ShaderMaterial;
+    if (nebulaMaterial && nebulaMaterial.uniforms && nebulaMaterial.uniforms['intensity']) {
+      nebulaMaterial.uniforms['intensity'].value = this._intensity;
+    }
+  }
+
+  getIntensity(): number {
+    return this._intensity;
+  }
+
   // Cleanup
   override destroy(): void {
     if (this._animationFrame) {
       cancelAnimationFrame(this._animationFrame);
     }
+    
+    if (this._resizeTimeout) {
+      clearTimeout(this._resizeTimeout);
+    }
+    
+    // Remove window resize listener
+    window.removeEventListener('resize', this.handleWindowResize.bind(this));
     
     // Dispose Three.js resources
     this._geometryPool.forEach(geometry => geometry.dispose());

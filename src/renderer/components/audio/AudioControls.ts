@@ -49,6 +49,10 @@ export class AudioControls extends BaseComponent {
   private _playing: boolean = false;
   private _loading: boolean = false;
   private _waveformData: WaveformData | null = null;
+  
+  // Progress update loop
+  private _progressAnimationFrame: number = 0;
+  private _progressUpdateCallback: (() => number) | null = null;
 
   constructor(options: AudioControlsOptions = {}) {
     super('div');
@@ -78,6 +82,7 @@ export class AudioControls extends BaseComponent {
   protected override init(): void {
     super.init();
     this.setupKeyboardShortcuts();
+    this.startProgressLoop();
   }
 
   private setupKeyboardShortcuts(): void {
@@ -168,7 +173,8 @@ export class AudioControls extends BaseComponent {
     this._previousButton = CosmicButton.skipPrevious({
       onClick: () => this.emit('previous')
     });
-    this._previousButton.addClass('cosmic-skip-button previous');
+    this._previousButton.addClass('cosmic-skip-button');
+    this._previousButton.addClass('previous');
 
     this._playButton = CosmicButton.playPause(this._playing, {
       onClick: () => this.togglePlayPause()
@@ -178,7 +184,8 @@ export class AudioControls extends BaseComponent {
     this._nextButton = CosmicButton.skipNext({
       onClick: () => this.emit('next')
     });
-    this._nextButton.addClass('cosmic-skip-button next');
+    this._nextButton.addClass('cosmic-skip-button');
+    this._nextButton.addClass('next');
 
     this._stopButton = CosmicButton.stop({
       onClick: () => this.stop()
@@ -573,15 +580,20 @@ export class AudioControls extends BaseComponent {
   }
 
   seek(time: number): void {
-    this._currentTime = Math.max(0, Math.min(this._duration, time));
+    const newTime = Math.max(0, Math.min(this._duration, time));
+    this._currentTime = newTime;
     this.updateTimeDisplay();
     this.updateWaveform();
     
     if (this._options.onSeek) {
-      this._options.onSeek(this._currentTime);
+      this._options.onSeek(newTime);
     }
     
-    this.emit('seek', this._currentTime);
+    this.emit('seek', newTime);
+    
+    // Force immediate visual update
+    this.updateTimeDisplay();
+    this.updateWaveform();
   }
 
   setVolume(volume: number): void {
@@ -731,5 +743,43 @@ export class AudioControls extends BaseComponent {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }
+
+  // Progress update loop
+  private startProgressLoop(): void {
+    const updateProgress = () => {
+      if (this._playing && this._progressUpdateCallback) {
+        // Get current time from audio manager
+        const currentTime = this._progressUpdateCallback();
+        if (currentTime !== this._currentTime) {
+          this._currentTime = currentTime;
+          this.updateTimeDisplay();
+          this.updateWaveform();
+        }
+      }
+      
+      // Continue the loop
+      this._progressAnimationFrame = requestAnimationFrame(updateProgress);
+    };
+    
+    updateProgress();
+  }
+
+  private stopProgressLoop(): void {
+    if (this._progressAnimationFrame) {
+      cancelAnimationFrame(this._progressAnimationFrame);
+      this._progressAnimationFrame = 0;
+    }
+  }
+
+  // Set callback to get current time from audio manager
+  setProgressUpdateCallback(callback: () => number): void {
+    this._progressUpdateCallback = callback;
+  }
+
+  // Cleanup
+  override destroy(): void {
+    this.stopProgressLoop();
+    super.destroy();
   }
 }

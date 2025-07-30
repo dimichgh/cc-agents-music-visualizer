@@ -1,0 +1,219 @@
+/* Icons CSS for Cosmic Music Visualizer */
+
+/* Cosmic Icon Base Styles */
+.cosmic-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  font-family: 'Cosmic Icons', 'Font Awesome', sans-serif;
+  font-style: normal;
+  font-weight: normal;
+  line-height: 1;
+  text-decoration: none;
+  vertical-align: middle;
+}
+
+/* Basic Icon Shapes Using CSS */
+.icon-play::before {
+  content: '▶';
+}
+
+.icon-pause::before {
+  content: '⏸';
+}
+
+.icon-stop::before {
+  content: '⏹';
+}
+
+.icon-skip-previous::before {
+  content: '⏮';
+}
+
+.icon-skip-next::before {
+  content: '⏭';
+}
+
+.icon-volume::before {
+  content: '🔊';
+}
+
+.icon-volume-low::before {
+  content: '🔉';
+}
+
+.icon-volume-muted::before {
+  content: '🔇';
+}
+
+.icon-folder::before {
+  content: '📁';
+}
+
+.icon-folder-open::before {
+  content: '📂';
+}
+
+.icon-file::before {
+  content: '📄';
+}
+
+.icon-music-note::before {
+  content: '♪';
+}
+
+.icon-audio-file::before {
+  content: '🎵';
+}
+
+.icon-settings::before {
+  content: '⚙';
+}
+
+.icon-fullscreen::before {
+  content: '⛶';
+}
+
+.icon-fullscreen-exit::before {
+  content: '⤌';
+}
+
+.icon-warning::before {
+  content: '⚠';
+}
+
+.icon-info::before {
+  content: 'ℹ';
+}
+
+.icon-close::before {
+  content: '✕';
+}
+
+.icon-menu::before {
+  content: '☰';
+}
+
+.icon-refresh::before {
+  content: '↻';
+}
+
+.icon-search::before {
+  content: '🔍';
+}
+
+.icon-upload-cloud::before {
+  content: '☁';
+}
+
+.icon-download::before {
+  content: '⬇';
+}
+
+.icon-record::before {
+  content: '●';
+}
+
+.icon-stop-record::before {
+  content: '⏹';
+}
+
+.icon-grid::before {
+  content: '⊞';
+}
+
+.icon-list::before {
+  content: '☰';
+}
+
+.icon-cosmic-logo::before {
+  content: '✦';
+}
+
+.icon-mission-control::before {
+  content: '🎛';
+}
+
+.icon-control-panel::before {
+  content: '⚡';
+}
+
+.icon-file-browser::before {
+  content: '🗂';
+}
+
+.icon-visualization::before {
+  content: '〰';
+}
+
+.icon-audio::before {
+  content: '🎚';
+}
+
+.icon-interface::before {
+  content: '🖥';
+}
+
+.icon-chevron-down::before {
+  content: '⌄';
+}
+
+.icon-sync::before {
+  content: '⟲';
+}
+
+.icon-save::before {
+  content: '💾';
+}
+
+.icon-export::before {
+  content: '📤';
+}
+
+/* File Type Icons */
+.icon-wave-file::before {
+  content: '🌊';
+}
+
+.icon-mp3-file::before {
+  content: '🎵';
+}
+
+.icon-flac-file::before {
+  content: '💿';
+}
+
+.icon-aac-file::before {
+  content: '🎶';
+}
+
+.icon-ogg-file::before {
+  content: '🎧';
+}
+
+/* Cosmic Icon Colors */
+.cosmic-icon {
+  color: var(--cosmic-primary);
+  transition: color 0.3s ease;
+}
+
+.cosmic-icon:hover {
+  color: var(--cosmic-accent);
+}
+
+/* Icon Sizes */
+.icon-small {
+  font-size: 0.8em;
+}
+
+.icon-medium {
+  font-size: 1.2em;
+}
+
+.icon-large {
+  font-size: 1.5em;
+}
+
+.icon-xl {
+  font-size: 2em;
+}

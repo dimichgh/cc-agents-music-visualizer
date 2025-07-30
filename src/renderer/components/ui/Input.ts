@@ -27,10 +27,11 @@ export class CosmicInput extends BaseComponent {
 
   protected override init(): void {
     super.init();
-    this.setupInputEventListeners();
   }
 
   private setupInputEventListeners(): void {
+    if (!this._inputElement) return;
+    
     this._inputElement.addEventListener('input', (event: Event) => {
       const target = event.target as HTMLInputElement;
       const oldValue = this._value;
@@ -144,6 +145,9 @@ export class CosmicInput extends BaseComponent {
       this._inputElement.id = inputId;
       this._labelElement.setAttribute('for', inputId);
     }
+
+    // Setup event listeners after elements are created
+    this.setupInputEventListeners();
 
     return container;
   }

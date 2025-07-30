@@ -1,5 +1,201 @@
 /* Music Visualizer - Layout Styles */
 
+/* === MAIN UI LAYOUT === */
+
+/* Main UI Layout */
+.main-ui {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.control-panel {
+  position: relative;
+  background: rgba(26, 26, 37, 0.95);
+  border: 1px solid rgba(100, 255, 218, 0.2);
+  border-radius: var(--cosmic-radius-curved) var(--cosmic-radius-curved) 0 0;
+  backdrop-filter: blur(20px);
+  box-shadow: 
+    var(--cosmic-shadow-soft),
+    inset 0 0 50px rgba(100, 255, 218, 0.05);
+  padding: 20px;
+  margin: 0 20px 0 20px;
+  pointer-events: auto;
+  transition: all var(--cosmic-duration-standard) var(--cosmic-ease-gentle);
+}
+
+.control-panel.hidden {
+  opacity: 0;
+  transform: translateY(100%);
+}
+
+/* Control Panel Sections */
+.file-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(100, 255, 218, 0.1);
+}
+
+.file-info {
+  color: rgba(100, 255, 218, 0.8);
+  font-size: var(--cosmic-text-body-small);
+  font-family: var(--cosmic-font-mono);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.playback-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.progress-section {
+  margin-bottom: 16px;
+}
+
+.time-display {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-family: var(--cosmic-font-mono);
+  font-size: var(--cosmic-text-body-small);
+  color: rgba(100, 255, 218, 0.7);
+}
+
+.separator {
+  color: rgba(100, 255, 218, 0.4);
+}
+
+.progress-bar {
+  position: relative;
+  height: 6px;
+  background: rgba(58, 58, 85, 0.6);
+  border-radius: var(--cosmic-radius-rounded);
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(to right,
+    rgba(100, 255, 218, 0.8) 0%,
+    rgba(68, 138, 255, 0.8) 100%);
+  border-radius: var(--cosmic-radius-rounded);
+  width: 0%;
+  transition: width 0.1s ease-out;
+}
+
+.controls-section {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+.control-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.control-label {
+  font-size: var(--cosmic-text-body-small);
+  color: rgba(100, 255, 218, 0.7);
+  font-weight: 500;
+}
+
+/* Cosmic Slider Styles */
+.cosmic-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: rgba(58, 58, 85, 0.6);
+  border-radius: var(--cosmic-radius-rounded);
+  outline: none;
+  cursor: pointer;
+}
+
+.cosmic-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, 
+    rgba(100, 255, 218, 0.9) 0%, 
+    rgba(68, 138, 255, 0.9) 100%);
+  cursor: pointer;
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    0 0 12px rgba(100, 255, 218, 0.5);
+  transition: all var(--cosmic-duration-fast) var(--cosmic-ease-gentle);
+}
+
+.cosmic-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.4),
+    0 0 20px rgba(100, 255, 218, 0.8);
+}
+
+.cosmic-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, 
+    rgba(100, 255, 218, 0.9) 0%, 
+    rgba(68, 138, 255, 0.9) 100%);
+  cursor: pointer;
+  border: none;
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    0 0 12px rgba(100, 255, 218, 0.5);
+  transition: all var(--cosmic-duration-fast) var(--cosmic-ease-gentle);
+}
+
+.cosmic-slider::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.4),
+    0 0 20px rgba(100, 255, 218, 0.8);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .control-panel {
+    margin: 0 10px 0 10px;
+    padding: 16px;
+  }
+  
+  .controls-section {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .playback-controls {
+    justify-content: center;
+  }
+  
+  .file-section {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+}
+
 /* === APP LAYOUT === */
 
 .cosmic-app-layout {
@@ -143,6 +339,62 @@
 .sidebar-panel.active {
   display: flex;
   flex-direction: column;
+}
+
+/* Quick Controls Styling */
+.quick-controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cosmic-space-medium);
+  padding: var(--cosmic-space-small);
+}
+
+.quick-controls h3 {
+  display: flex;
+  align-items: center;
+  gap: var(--cosmic-space-small);
+  margin: 0 0 var(--cosmic-space-medium) 0;
+  color: rgba(100, 255, 218, 0.9);
+  border-bottom: 1px solid rgba(100, 255, 218, 0.1);
+  padding-bottom: var(--cosmic-space-small);
+}
+
+.quick-controls .control-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cosmic-space-small);
+}
+
+.quick-controls .control-label {
+  font-size: var(--cosmic-text-body-small);
+  color: rgba(100, 255, 218, 0.7);
+  font-weight: 500;
+}
+
+.quick-controls .cosmic-dropdown {
+  width: 100%;
+  padding: var(--cosmic-space-small);
+  background: rgba(26, 26, 37, 0.8);
+  border: 1px solid rgba(100, 255, 218, 0.3);
+  border-radius: var(--cosmic-radius-rounded);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.quick-controls .cosmic-dropdown:focus {
+  outline: none;
+  border-color: rgba(100, 255, 218, 0.6);
+  box-shadow: 0 0 8px rgba(100, 255, 218, 0.3);
+}
+
+.control-actions {
+  margin-top: var(--cosmic-space-medium);
+  padding-top: var(--cosmic-space-medium);
+  border-top: 1px solid rgba(100, 255, 218, 0.1);
+}
+
+.full-width {
+  width: 100%;
+  justify-content: center;
 }
 
 /* === MAIN CONTENT === */
@@ -308,6 +560,8 @@
   flex-direction: column;
   height: 100%;
   gap: var(--cosmic-space-medium);
+  overflow: hidden; /* Prevent overflow issues */
+  position: relative; /* Establish stacking context */
 }
 
 .file-manager-header h2 {
@@ -334,6 +588,9 @@
   align-items: center;
   padding: var(--cosmic-space-small);
   gap: var(--cosmic-space-medium);
+  flex-shrink: 0; /* Prevent toolbar from shrinking */
+  flex-wrap: wrap; /* Allow wrapping on small screens */
+  min-height: 48px; /* Ensure minimum height */
 }
 
 .search-container {
@@ -353,6 +610,8 @@
 .toolbar-actions {
   display: flex;
   gap: var(--cosmic-space-small);
+  flex-shrink: 0; /* Prevent action buttons from shrinking */
+  align-items: center;
 }
 
 .cosmic-drop-zone {
@@ -364,6 +623,8 @@
   border: 2px dashed rgba(100, 255, 218, 0.3);
   border-radius: var(--cosmic-radius-curved);
   transition: all var(--cosmic-duration-standard) ease;
+  flex-shrink: 0; /* Prevent shrinking */
+  z-index: 1; /* Proper stacking */
 }
 
 .cosmic-drop-zone.drag-over {
@@ -430,6 +691,8 @@
   flex: 1;
   overflow-y: auto;
   padding: var(--cosmic-space-medium);
+  min-height: 0; /* Allow flex shrinking */
+  position: relative; /* Establish stacking context */
 }
 
 .file-list-empty {
@@ -725,6 +988,46 @@
   z-index: var(--cosmic-z-modal);
   backdrop-filter: blur(20px);
   background: rgba(26, 26, 37, 0.95);
+}
+
+/* Mobile file manager fixes */
+.cosmic-app-layout.bp-mobile .file-manager-toolbar {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--cosmic-space-small);
+  padding: var(--cosmic-space-medium);
+}
+
+.cosmic-app-layout.bp-mobile .search-container {
+  order: 2;
+  margin-top: var(--cosmic-space-small);
+}
+
+.cosmic-app-layout.bp-mobile .toolbar-actions {
+  order: 1;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.cosmic-app-layout.bp-mobile .cosmic-drop-zone {
+  min-height: 150px;
+  margin: var(--cosmic-space-small);
+}
+
+.cosmic-app-layout.bp-mobile .drop-zone-content {
+  padding: var(--cosmic-space-medium);
+}
+
+.cosmic-app-layout.bp-mobile .file-item {
+  padding: var(--cosmic-space-small);
+  grid-template-columns: auto 1fr;
+  gap: var(--cosmic-space-small);
+}
+
+.cosmic-app-layout.bp-mobile .file-actions {
+  grid-column: 1 / -1;
+  justify-content: center;
+  margin-top: var(--cosmic-space-small);
 }
 
 .cosmic-app-layout.bp-mobile .audio-controls-main {

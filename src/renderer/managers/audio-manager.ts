@@ -61,6 +61,9 @@ export class AudioManager implements ServiceInterface {
       // Connect FFT analyzer
       this.gainNode.connect(this.fftAnalyzer.getAnalyserNode());
 
+      // Subscribe to state changes for playback control
+      this.subscribeToStateChanges();
+
       this._isInitialized = true;
       this.logger.info('AudioManager initialized successfully');
     } catch (error) {
@@ -138,7 +141,7 @@ export class AudioManager implements ServiceInterface {
       }
 
       // Stop current playback
-      this.stop();
+      this.stopInternal();
 
       // Create new source node
       this.sourceNode = this.audioContext.createBufferSource();
@@ -156,12 +159,6 @@ export class AudioManager implements ServiceInterface {
       this.startTime = this.audioContext.currentTime - offset;
       this.pauseTime = 0;
       this.isPlaying = true;
-
-      // Update state
-      this.stateManager.dispatch({
-        type: ActionTypes.AUDIO_PLAY,
-        payload: { timestamp: Date.now() },
-      });
 
       this.logger.debug('Audio playback started');
     } catch (error) {
@@ -185,12 +182,6 @@ export class AudioManager implements ServiceInterface {
       this.sourceNode = null;
       this.isPlaying = false;
 
-      // Update state
-      this.stateManager.dispatch({
-        type: ActionTypes.AUDIO_PAUSE,
-        payload: { position: this.pauseTime },
-      });
-
       this.logger.debug('Audio playback paused');
     } catch (error) {
       this.logger.error('Failed to pause audio playback', error as Error);
@@ -198,6 +189,10 @@ export class AudioManager implements ServiceInterface {
   }
 
   stop(): void {
+    this.stopInternal();
+  }
+
+  private stopInternal(): void {
     try {
       if (this.sourceNode) {
         this.sourceNode.stop();
@@ -207,12 +202,6 @@ export class AudioManager implements ServiceInterface {
       this.startTime = 0;
       this.pauseTime = 0;
       this.isPlaying = false;
-
-      // Update state
-      this.stateManager.dispatch({
-        type: ActionTypes.AUDIO_STOP,
-        payload: { timestamp: Date.now() },
-      });
 
       this.logger.debug('Audio playback stopped');
     } catch (error) {
@@ -229,7 +218,7 @@ export class AudioManager implements ServiceInterface {
     const wasPlaying = this.isPlaying;
     
     // Stop current playback
-    this.stop();
+    this.stopInternal();
     
     // Set new position
     this.pauseTime = Math.max(0, Math.min(time, this.audioBuffer.duration));
@@ -239,10 +228,10 @@ export class AudioManager implements ServiceInterface {
       this.play();
     }
 
-    // Update state
+    // Dispatch seek update to state immediately
     this.stateManager.dispatch({
-      type: ActionTypes.AUDIO_SEEK,
-      payload: { time: this.pauseTime },
+      type: ActionTypes.AUDIO_SEEK_UPDATE,
+      payload: { currentTime: this.pauseTime, timestamp: Date.now() },
     });
 
     this.logger.debug(`Seeked to position: ${this.pauseTime}s`);
@@ -253,12 +242,6 @@ export class AudioManager implements ServiceInterface {
 
     const clampedVolume = Math.max(0, Math.min(1, volume));
     this.gainNode.gain.setValueAtTime(clampedVolume, this.audioContext.currentTime);
-
-    // Update state
-    this.stateManager.dispatch({
-      type: ActionTypes.AUDIO_VOLUME_CHANGE,
-      payload: { volume: clampedVolume },
-    });
 
     this.logger.debug(`Volume set to: ${clampedVolume}`);
   }
@@ -276,12 +259,26 @@ export class AudioManager implements ServiceInterface {
 
   updateAnalysis(): AudioFeatures | null {
     if (!this.audioBuffer || !this.isPlaying) {
+      // Debug logging for why analysis is not running
+      if (Math.random() < 0.01) { // Log occasionally to avoid spam
+        this.logger.debug(`Analysis skipped - Buffer: ${!!this.audioBuffer}, Playing: ${this.isPlaying}`);
+      }
       return null;
     }
 
     try {
       // Get frequency analysis
       const frequencyData = this.fftAnalyzer.analyzeFrequencies();
+      
+      // Debug frequency data
+      if (frequencyData && frequencyData.frequencies.length > 0) {
+        const avgFreq = frequencyData.frequencies.reduce((a, b) => a + b, 0) / frequencyData.frequencies.length;
+        if (Math.random() < 0.05) { // Log 5% of the time
+          this.logger.debug(`Frequency analysis - Length: ${frequencyData.frequencies.length}, Avg: ${avgFreq.toFixed(2)}`);
+        }
+      } else {
+        this.logger.warn('No frequency data from FFT analyzer');
+      }
       
       // Detect beats
       const beats = this.fftAnalyzer.detectBeats(frequencyData);
@@ -348,9 +345,124 @@ export class AudioManager implements ServiceInterface {
     return 1.0;
   }
 
+  private subscribeToStateChanges(): void {
+    let lastAction: any = null;
+    
+    this.stateManager.subscribe((state) => {
+      // Handle volume changes
+      if (this.gainNode && state.audio.volume !== this.gainNode.gain.value) {
+        this.gainNode.gain.setValueAtTime(state.audio.volume, this.audioContext.currentTime);
+        this.logger.debug(`Volume updated to: ${state.audio.volume}`);
+      }
+    });
+
+    // Intercept dispatch for action handling
+    const originalDispatch = this.stateManager.dispatch.bind(this.stateManager);
+    this.stateManager.dispatch = (action) => {
+      this.logger.debug(`AudioManager intercepting action: ${action.type}`);
+      
+      // Handle audio actions before they reach the state
+      switch (action.type) {
+        case ActionTypes.AUDIO_FILE_LOAD_REQUEST:
+          if (action.payload?.file) {
+            this.handleLoadFileAction(action.payload.file);
+          }
+          // Don't propagate this action to state - it's just a command
+          return;
+        
+        case ActionTypes.AUDIO_PLAY:
+          this.handlePlayAction();
+          break;
+        
+        case ActionTypes.AUDIO_PAUSE:
+          this.handlePauseAction();
+          break;
+        
+        case ActionTypes.AUDIO_STOP:
+          this.handleStopAction();
+          break;
+        
+        case ActionTypes.AUDIO_SEEK:
+          if (action.payload?.time !== undefined) {
+            this.handleSeekAction(action.payload.time);
+          }
+          break;
+          
+        case ActionTypes.AUDIO_VOLUME_CHANGE:
+          if (action.payload?.volume !== undefined) {
+            this.handleVolumeAction(action.payload.volume);
+          }
+          break;
+      }
+      
+      // Call the original dispatch to update state
+      originalDispatch(action);
+    };
+  }
+
+  private handleLoadFileAction(file: AudioFile): void {
+    this.logger.debug('AudioManager handling load file action', file);
+    try {
+      this.loadAudioFile(file);
+    } catch (error) {
+      this.logger.error('Failed to handle load file action', error as Error);
+    }
+  }
+
+  private handlePlayAction(): void {
+    this.logger.debug('AudioManager handling play action');
+    try {
+      this.play();
+    } catch (error) {
+      this.logger.error('Failed to handle play action', error as Error);
+    }
+  }
+
+  private handlePauseAction(): void {
+    this.logger.debug('AudioManager handling pause action');
+    try {
+      this.pause();
+    } catch (error) {
+      this.logger.error('Failed to handle pause action', error as Error);
+    }
+  }
+
+  private handleStopAction(): void {
+    this.logger.debug('AudioManager handling stop action');
+    try {
+      this.stop();
+    } catch (error) {
+      this.logger.error('Failed to handle stop action', error as Error);
+    }
+  }
+
+  private handleSeekAction(time: number): void {
+    this.logger.debug(`AudioManager handling seek action to: ${time}s`);
+    try {
+      this.seek(time);
+    } catch (error) {
+      this.logger.error('Failed to handle seek action', error as Error);
+    }
+  }
+
+  private handleVolumeAction(volume: number): void {
+    this.logger.debug(`AudioManager handling volume action to: ${volume}`);
+    try {
+      this.setVolume(volume);
+    } catch (error) {
+      this.logger.error('Failed to handle volume action', error as Error);
+    }
+  }
+
   private handlePlaybackEnd(): void {
-    this.stop();
+    this.stopInternal();
     this.logger.debug('Playback completed');
+    
+    // Dispatch stop action to update state
+    this.stateManager.dispatch({
+      type: ActionTypes.AUDIO_STOP,
+      payload: { timestamp: Date.now() },
+    });
   }
 
   public isInitialized(): boolean {

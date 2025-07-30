@@ -31,7 +31,6 @@ export class FileManager extends BaseComponent {
 
   protected override init(): void {
     super.init();
-    this.setupDragDropListeners();
     this.setupKeyboardNavigation();
   }
 
@@ -41,11 +40,13 @@ export class FileManager extends BaseComponent {
       document.addEventListener(eventName, (e) => e.preventDefault());
     });
 
-    // Drop zone events
-    this._dropZone.addEventListener('dragenter', this.handleDragEnter.bind(this));
-    this._dropZone.addEventListener('dragover', this.handleDragOver.bind(this));
-    this._dropZone.addEventListener('dragleave', this.handleDragLeave.bind(this));
-    this._dropZone.addEventListener('drop', this.handleDrop.bind(this));
+    // Drop zone events - only if dropZone exists
+    if (this._dropZone) {
+      this._dropZone.addEventListener('dragenter', this.handleDragEnter.bind(this));
+      this._dropZone.addEventListener('dragover', this.handleDragOver.bind(this));
+      this._dropZone.addEventListener('dragleave', this.handleDragLeave.bind(this));
+      this._dropZone.addEventListener('drop', this.handleDrop.bind(this));
+    }
   }
 
   private setupKeyboardNavigation(): void {
@@ -253,6 +254,9 @@ export class FileManager extends BaseComponent {
     browseButton.addEventListener('click', () => this.openFileDialog());
 
     this._element.appendChild(this._dropZone);
+    
+    // Setup drag and drop after dropZone is created
+    this.setupDragDropListeners();
   }
 
   private createFileList(): void {

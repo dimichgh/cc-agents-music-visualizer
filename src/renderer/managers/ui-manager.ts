@@ -136,11 +136,18 @@ export class UIManager implements ServiceInterface {
   }
 
   private async handleOpenFile(): Promise<void> {
+    this.logger.info('Open File button clicked');
     try {
       const response = await window.electronAPI.file.openDialog();
       if (response.success && response.data) {
-        // The audio manager will handle the file loading through IPC events
-        this.logger.debug('File dialog opened successfully');
+        this.logger.debug('File selected from dialog:', response.data);
+        // Dispatch action to load the file
+        this.stateManager.dispatch({
+          type: ActionTypes.AUDIO_FILE_LOAD_REQUEST,
+          payload: { file: response.data },
+        });
+      } else {
+        this.logger.warn('File dialog cancelled or failed', response);
       }
     } catch (error) {
       this.logger.error('Failed to open file dialog', error as Error);
@@ -148,21 +155,27 @@ export class UIManager implements ServiceInterface {
   }
 
   private handlePlayPause(): void {
+    this.logger.info('Play/Pause button clicked');
     const state = this.stateManager.getState();
     const isPlaying = stateSelectors.isPlaying(state);
     const hasFile = stateSelectors.hasAudioFile(state);
 
+    this.logger.debug(`Current state - Playing: ${isPlaying}, Has file: ${hasFile}`);
+
     if (!hasFile) {
+      this.logger.info('No file loaded, opening file dialog');
       this.handleOpenFile();
       return;
     }
 
     if (isPlaying) {
+      this.logger.info('Dispatching PAUSE action');
       this.stateManager.dispatch({
         type: ActionTypes.AUDIO_PAUSE,
         payload: { timestamp: Date.now() },
       });
     } else {
+      this.logger.info('Dispatching PLAY action');
       this.stateManager.dispatch({
         type: ActionTypes.AUDIO_PLAY,
         payload: { timestamp: Date.now() },
@@ -171,6 +184,7 @@ export class UIManager implements ServiceInterface {
   }
 
   private handleStop(): void {
+    this.logger.info('Stop button clicked');
     this.stateManager.dispatch({
       type: ActionTypes.AUDIO_STOP,
       payload: { timestamp: Date.now() },
@@ -194,16 +208,24 @@ export class UIManager implements ServiceInterface {
 
     const rect = progressBar.getBoundingClientRect();
     const clickX = event.clientX - rect.left;
-    const percentage = clickX / rect.width;
+    const percentage = Math.max(0, Math.min(1, clickX / rect.width));
     
     const state = this.stateManager.getState();
     const duration = stateSelectors.getDuration(state);
     const seekTime = percentage * duration;
 
+    this.logger.debug(`Progress bar clicked: ${percentage * 100}% -> ${seekTime}s`);
+
     this.stateManager.dispatch({
       type: ActionTypes.AUDIO_SEEK,
       payload: { time: seekTime },
     });
+
+    // Immediately update progress bar visual
+    const progressFill = this.elements['progress-fill'];
+    if (progressFill) {
+      progressFill.style.width = `${percentage * 100}%`;
+    }
   }
 
   private handleVolumeChange(event: Event): void {
@@ -348,8 +370,8 @@ export class UIManager implements ServiceInterface {
       playPauseBtn.textContent = 'Loading...';
       playPauseBtn.setAttribute('disabled', 'true');
     } else if (!hasFile) {
-      playPauseBtn.textContent = 'Open File';
-      playPauseBtn.removeAttribute('disabled');
+      playPauseBtn.textContent = 'Play';
+      playPauseBtn.setAttribute('disabled', 'true');
     } else {
       playPauseBtn.textContent = isPlaying ? 'Pause' : 'Play';
       playPauseBtn.removeAttribute('disabled');

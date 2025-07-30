@@ -1,4 +1,6 @@
-// Music Visualizer - Main Application Entry Point
+// Music Visualizer - Application Entry Point
+// NOTE: This file is deprecated - main entry is in index.ts
+// This file is kept for reference but should not be used
 
 import { AppLayout } from './components/layout/AppLayout';
 import { LoadingOverlay } from './components/ui/LoadingState';
@@ -91,12 +93,19 @@ class CosmicMusicVisualizer {
   }
 
   private initializeTheme(): void {
-    // Detect user preferences
+    // Check if user has a saved theme preference first
+    const savedTheme = localStorage.getItem('cosmic-theme');
+    if (savedTheme) {
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      return; // Don't override user preference
+    }
+
+    // Detect user preferences only if no saved preference
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const prefersHighContrast = window.matchMedia('(prefers-contrast: high)').matches;
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    // Apply initial theme
+    // Apply initial theme based on system preferences
     let theme = 'cosmic';
     if (prefersHighContrast) {
       theme = 'cosmic-high-contrast';
@@ -105,14 +114,15 @@ class CosmicMusicVisualizer {
     }
 
     document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('cosmic-theme', theme);
 
     if (prefersReducedMotion) {
       document.documentElement.classList.add('reduced-motion');
     }
 
-    // Listen for theme changes
+    // Listen for theme changes only if no user override
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-      if (!prefersHighContrast) {
+      if (!localStorage.getItem('cosmic-theme') && !prefersHighContrast) {
         const newTheme = e.matches ? 'cosmic-dark' : 'cosmic';
         document.documentElement.setAttribute('data-theme', newTheme);
         this.announceToScreenReader(`Theme changed to ${newTheme.replace('-', ' ')}`);
@@ -120,9 +130,11 @@ class CosmicMusicVisualizer {
     });
 
     window.matchMedia('(prefers-contrast: high)').addEventListener('change', (e) => {
-      const newTheme = e.matches ? 'cosmic-high-contrast' : 'cosmic';
-      document.documentElement.setAttribute('data-theme', newTheme);
-      this.announceToScreenReader(`High contrast mode ${e.matches ? 'enabled' : 'disabled'}`);
+      if (!localStorage.getItem('cosmic-theme')) {
+        const newTheme = e.matches ? 'cosmic-high-contrast' : 'cosmic';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        this.announceToScreenReader(`High contrast mode ${e.matches ? 'enabled' : 'disabled'}`);
+      }
     });
 
     window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', (e) => {

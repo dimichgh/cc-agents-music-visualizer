@@ -1,6 +1,7 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+const webpack = require('webpack');
 
 module.exports = {
   mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
@@ -60,6 +61,7 @@ module.exports = {
       '@': path.resolve(__dirname, 'src'),
       '@/renderer': path.resolve(__dirname, 'src/renderer'),
       '@/shared': path.resolve(__dirname, 'src/shared'),
+      'three': path.resolve(__dirname, 'node_modules/three'),
     },
   },
   plugins: [
@@ -75,7 +77,15 @@ module.exports = {
           to: path.resolve(__dirname, 'dist/renderer/assets'),
           noErrorOnMissing: true,
         },
+        {
+          from: path.resolve(__dirname, 'src/renderer/styles'),
+          to: path.resolve(__dirname, 'dist/renderer/styles'),
+          noErrorOnMissing: true,
+        },
       ],
+    }),
+    new webpack.DefinePlugin({
+      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
     }),
   ],
   devServer: {
@@ -106,6 +116,7 @@ module.exports = {
           chunks: 'all',
           priority: 20,
           enforce: true,
+          reuseExistingChunk: true,
         },
       },
     },

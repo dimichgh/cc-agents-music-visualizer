@@ -323,6 +323,11 @@ export class StateManager implements IStateManager {
         break;
 
       // System actions
+      case ActionTypes.SYSTEM_READY:
+        this.logger.info('System is ready');
+        // Add any system ready state updates here if needed
+        break;
+
       case ActionTypes.SYSTEM_ERROR:
         this.addNotification('error', 'System Error', action.payload.message);
         break;

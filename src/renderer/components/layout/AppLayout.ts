@@ -45,9 +45,17 @@ export class AppLayout extends BaseComponent {
       ...options
     };
     
+    // Restore saved theme before rendering
+    this.restoreTheme();
+    
     this.render();
     this.setupResponsiveLayout();
     this.setupKeyboardShortcuts();
+  }
+
+  private restoreTheme(): void {
+    const savedTheme = localStorage.getItem('cosmic-theme') || 'cosmic';
+    this.applyTheme(savedTheme);
   }
 
   render(): HTMLElement {
@@ -104,14 +112,9 @@ export class AppLayout extends BaseComponent {
       onClick: () => this.openSettings()
     });
 
-    const fullscreenButton = CosmicButton.icon('fullscreen', {
-      ariaLabel: 'Enter fullscreen mode',
-      onClick: () => this.toggleFullscreen()
-    });
-
+    // Removed fullscreen button from header to simplify - use visualization canvas button instead
     navSection.appendChild(sidebarToggle.element);
     navSection.appendChild(settingsButton.element);
-    navSection.appendChild(fullscreenButton.element);
 
     headerContent.appendChild(titleSection);
     headerContent.appendChild(navSection);
@@ -171,8 +174,8 @@ export class AppLayout extends BaseComponent {
     sidebarTabs.setAttribute('role', 'tablist');
 
     const tabButtons = [
-      { id: 'files', label: 'Files', icon: 'folder', active: true },
-      { id: 'controls', label: 'Controls', icon: 'controls', active: false }
+      { id: 'files', label: 'Files', icon: 'icon-file-browser', active: true },
+      { id: 'controls', label: 'Controls', icon: 'icon-control-panel', active: false }
     ];
 
     tabButtons.forEach(tab => {
@@ -208,13 +211,98 @@ export class AppLayout extends BaseComponent {
     controlsPanel.id = 'controls-panel';
     controlsPanel.setAttribute('role', 'tabpanel');
     controlsPanel.setAttribute('aria-labelledby', 'controls-tab');
+    
+    // Add quick controls to the controls panel
+    controlsPanel.innerHTML = `
+      <div class="quick-controls">
+        <h3 class="cosmic-heading-small">
+          <span class="cosmic-icon icon-mission-control"></span>
+          Quick Controls
+        </h3>
+        <div class="control-group">
+          <label class="control-label">Visualization Intensity</label>
+          <input type="range" class="cosmic-slider intensity-control" 
+                 min="0.1" max="2.0" step="0.1" value="1.0"
+                 aria-label="Visualization intensity">
+        </div>
+        <div class="control-group">
+          <label class="control-label">Theme Mode</label>
+          <select class="cosmic-dropdown theme-selector">
+            <option value="cosmic">Cosmic (Default)</option>
+            <option value="cosmic-dark">Cosmic Dark</option>
+            <option value="cosmic-high-contrast">High Contrast</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label class="control-label">Preset</label>
+          <select class="cosmic-dropdown preset-selector">
+            <option value="cosmic-symphony">Cosmic Symphony</option>
+            <option value="stellar-nursery">Stellar Nursery</option>
+            <option value="galactic-core">Galactic Core</option>
+            <option value="solar-wind">Solar Wind</option>
+            <option value="quantum-field">Quantum Field</option>
+            <option value="nebula-dance">Nebula Dance</option>
+          </select>
+        </div>
+        <div class="control-actions">
+          <button class="cosmic-button secondary full-width">
+            <span class="cosmic-icon icon-settings"></span>
+            Advanced Settings
+          </button>
+        </div>
+      </div>
+    `;
 
     sidebarContent.appendChild(filesPanel);
     sidebarContent.appendChild(controlsPanel);
 
+    // Set up quick controls event listeners
+    this.setupQuickControlsListeners(controlsPanel);
+
     this._sidebar.appendChild(sidebarHeader);
     this._sidebar.appendChild(sidebarTabs);
     this._sidebar.appendChild(sidebarContent);
+  }
+
+  private setupQuickControlsListeners(controlsPanel: HTMLElement): void {
+    // Intensity control
+    const intensityControl = controlsPanel.querySelector('.intensity-control') as HTMLInputElement;
+    if (intensityControl) {
+      intensityControl.addEventListener('input', (event) => {
+        const value = parseFloat((event.target as HTMLInputElement).value);
+        this.handleSettingChange('energy-sensitivity', value, 'visualization');
+      });
+    }
+
+    // Theme selector
+    const themeSelector = controlsPanel.querySelector('.theme-selector') as HTMLSelectElement;
+    if (themeSelector) {
+      // Set current theme
+      const savedTheme = localStorage.getItem('cosmic-theme') || 'cosmic';
+      themeSelector.value = savedTheme;
+      
+      themeSelector.addEventListener('change', (event) => {
+        const value = (event.target as HTMLSelectElement).value;
+        this.handleSettingChange('theme', value, 'interface');
+      });
+    }
+
+    // Preset selector
+    const presetSelector = controlsPanel.querySelector('.preset-selector') as HTMLSelectElement;
+    if (presetSelector) {
+      presetSelector.addEventListener('change', (event) => {
+        const value = (event.target as HTMLSelectElement).value;
+        this.handleSettingChange('preset', value, 'visualization');
+      });
+    }
+
+    // Advanced settings button
+    const advancedButton = controlsPanel.querySelector('.control-actions button') as HTMLElement;
+    if (advancedButton) {
+      advancedButton.addEventListener('click', () => {
+        this.openSettings();
+      });
+    }
   }
 
   private createFooter(): void {
@@ -474,7 +562,6 @@ export class AppLayout extends BaseComponent {
 
   private setupKeyboardShortcuts(): void {
     const shortcuts = [
-      { key: 'f', handler: () => this.toggleFullscreen() },
       { key: 's', ctrl: true, handler: (e: KeyboardEvent) => { e.preventDefault(); this.openSettings(); } },
       { key: 'b', ctrl: true, handler: (e: KeyboardEvent) => { e.preventDefault(); this.toggleSidebar(); } },
       { key: 'Escape', handler: () => this.handleEscape() }
@@ -552,6 +639,8 @@ export class AppLayout extends BaseComponent {
         break;
       case 'theme':
         this.applyTheme(value);
+        // Store theme preference to prevent reset during playback
+        localStorage.setItem('cosmic-theme', value);
         break;
       case 'reduced-motion':
         this.toggleReducedMotion(value);
@@ -560,7 +649,7 @@ export class AppLayout extends BaseComponent {
         // Update visualization particle count
         break;
       case 'energy-sensitivity':
-        // Update audio sensitivity
+        this._visualizationCanvas.setIntensity(value);
         break;
     }
 
@@ -570,8 +659,6 @@ export class AppLayout extends BaseComponent {
   private handleEscape(): void {
     if (this._settingsPanel.isVisible) {
       this._settingsPanel.close();
-    } else if (this._fullscreenMode) {
-      this.exitFullscreen();
     }
   }
 
@@ -663,7 +750,17 @@ export class AppLayout extends BaseComponent {
   }
 
   private applyTheme(theme: string): void {
+    // Force theme application and prevent override
     document.documentElement.setAttribute('data-theme', theme);
+    document.body.setAttribute('data-theme', theme);
+    
+    // Store in localStorage for persistence
+    localStorage.setItem('cosmic-theme', theme);
+    
+    // Force re-render of theme-dependent elements
+    this._element.classList.remove('theme-cosmic', 'theme-cosmic-dark', 'theme-cosmic-high-contrast');
+    this._element.classList.add(`theme-${theme.replace('cosmic-', '').replace('cosmic', 'cosmic')}`);
+    
     this.emit('themeChange', theme);
   }
 

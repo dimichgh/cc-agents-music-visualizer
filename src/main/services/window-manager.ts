@@ -51,11 +51,14 @@ export class WindowManager implements ServiceInterface {
       title: 'Music Visualizer',
       titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
       frame: true,
+      alwaysOnTop: false,
+      skipTaskbar: false,
+      focusable: true,
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
         sandbox: false,
-        preload: path.join(__dirname, '../preload/preload.js'),
+        preload: path.join(__dirname, 'preload.js'),
         webSecurity: process.env['NODE_ENV'] === 'production',
         allowRunningInsecureContent: false,
         experimentalFeatures: false,
@@ -69,6 +72,9 @@ export class WindowManager implements ServiceInterface {
     }
 
     this.mainWindow = new BrowserWindow(windowOptions);
+    
+    this.logger.info(`Created window with dimensions: ${windowWidth}x${windowHeight}`);
+    this.logger.info(`Window created, isVisible: ${this.mainWindow.isVisible()}, isDestroyed: ${this.mainWindow.isDestroyed()}`);
 
     // Set up window event handlers
     this.setupWindowEventHandlers();
@@ -76,20 +82,70 @@ export class WindowManager implements ServiceInterface {
     // Load the renderer
     await this.loadRenderer();
 
-    // Show window when ready
-    this.mainWindow.once('ready-to-show', () => {
+    // Show window when ready with fallback
+    let windowShown = false;
+    
+    // Add additional debugging for window events
+    this.mainWindow.webContents.on('did-finish-load', () => {
+      this.logger.info('Renderer did-finish-load event fired');
       if (this.mainWindow) {
+        this.logger.info(`After did-finish-load: isVisible: ${this.mainWindow.isVisible()}, bounds: ${JSON.stringify(this.mainWindow.getBounds())}`);
+      }
+    });
+    
+    this.mainWindow.once('ready-to-show', () => {
+      this.logger.info('ready-to-show event fired');
+      if (this.mainWindow && !windowShown) {
+        windowShown = true;
+        this.logger.info('Attempting to show window via ready-to-show event...');
         this.mainWindow.show();
         
         // Focus the window
         this.mainWindow.focus();
+        
+        // Ensure window is visible and on top
+        this.mainWindow.moveTop();
 
         // Enable DevTools in development
         if (process.env['NODE_ENV'] === 'development') {
           this.mainWindow.webContents.openDevTools();
         }
+        
+        this.logger.info(`Window shown via ready-to-show event. isVisible: ${this.mainWindow.isVisible()}`);
       }
     });
+
+    // More aggressive fallback: Show window after shorter timeout
+    setTimeout(() => {
+      if (this.mainWindow && !windowShown && !this.mainWindow.isDestroyed()) {
+        windowShown = true;
+        this.logger.warn('ready-to-show event did not fire, using fallback...');
+        this.logger.info(`Before fallback show: isVisible: ${this.mainWindow.isVisible()}, bounds: ${JSON.stringify(this.mainWindow.getBounds())}`);
+        
+        this.mainWindow.show();
+        this.mainWindow.focus();
+        this.mainWindow.moveTop();
+        
+        if (process.env['NODE_ENV'] === 'development') {
+          this.mainWindow.webContents.openDevTools();
+        }
+        
+        this.logger.info(`After fallback show: isVisible: ${this.mainWindow.isVisible()}`);
+      }
+    }, 1500); // 1.5 second fallback
+    
+    // Even more aggressive fallback: Force show after longer timeout
+    setTimeout(() => {
+      if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+        if (!this.mainWindow.isVisible()) {
+          this.logger.error('Window still not visible after 3 seconds, forcing show...');
+          this.mainWindow.show();
+          this.mainWindow.focus();
+          this.mainWindow.moveTop();
+          this.logger.info(`After force show: isVisible: ${this.mainWindow.isVisible()}`);
+        }
+      }
+    }, 3000); // 3 second force show
 
     this.logger.info('Main window created successfully');
     return this.mainWindow;
@@ -167,16 +223,15 @@ export class WindowManager implements ServiceInterface {
       throw new Error('Main window not created');
     }
 
-    const isDevelopment = process.env['NODE_ENV'] === 'development';
+    // Always load from built files for now (can be configured for development server later)
+    const rendererPath = path.join(__dirname, '../renderer/index.html');
     
-    if (isDevelopment) {
-      // Development: load from webpack dev server
-      const devServerUrl = 'http://localhost:3000';
-      await this.mainWindow.loadURL(devServerUrl);
-    } else {
-      // Production: load from built files
-      const rendererPath = path.join(__dirname, '../../renderer/index.html');
+    try {
       await this.mainWindow.loadFile(rendererPath);
+      this.logger.info(`Renderer loaded from: ${rendererPath}`);
+    } catch (error) {
+      this.logger.error(`Failed to load renderer from ${rendererPath}:`, error as Error);
+      throw error;
     }
   }
 
